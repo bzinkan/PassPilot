@@ -21,6 +21,7 @@ import { useAuth } from "@/hooks/useAuth";
 import PassManagement from "@/components/PassManagement";
 import RosterManagement from "@/components/RosterManagement";
 import MyClassView from "@/components/MyClassView";
+import ProfileSettings from "@/components/ProfileSettings";
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -150,10 +151,16 @@ export default function Dashboard() {
               <UserPlus className="h-4 w-4 mr-2" />
               Roster
             </TabsTrigger>
-            <TabsTrigger value="admin" data-testid="tab-admin" className="data-[state=active]:bg-pilot-gradient data-[state=active]:text-white">
+            <TabsTrigger value="profile" data-testid="tab-profile" className="data-[state=active]:bg-pilot-gradient data-[state=active]:text-white">
               <Settings className="h-4 w-4 mr-2" />
-              Admin
+              Profile
             </TabsTrigger>
+            {user?.role === 'admin' || user?.role === 'superadmin' ? (
+              <TabsTrigger value="admin" data-testid="tab-admin" className="data-[state=active]:bg-pilot-gradient data-[state=active]:text-white">
+                <Settings className="h-4 w-4 mr-2" />
+                Admin
+              </TabsTrigger>
+            ) : null}
           </TabsList>
 
           <TabsContent value="myclass" className="space-y-6">
@@ -166,6 +173,10 @@ export default function Dashboard() {
 
           <TabsContent value="roster" className="space-y-6">
             <RosterManagement />
+          </TabsContent>
+
+          <TabsContent value="profile" className="space-y-6">
+            <ProfileSettings />
           </TabsContent>
 
           <TabsContent value="admin" className="space-y-6">

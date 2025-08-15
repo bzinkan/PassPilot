@@ -11,7 +11,7 @@ export const profileRouter = Router();
 
 // Get current user profile
 profileRouter.get("/me", requireAuth, asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
-  const userId = req.user?.userId;
+  const userId = req.session?.userId;
   if (!userId) {
     res.status(401).json({ error: "Unauthorized" });
     return;
@@ -23,8 +23,8 @@ profileRouter.get("/me", requireAuth, asyncHandler(async (req: AuthenticatedRequ
     role: users.role,
     schoolId: users.schoolId,
     active: users.active,
-    createdAt: users.createdAt,
-    updatedAt: users.updatedAt
+    displayName: users.displayName,
+    createdAt: users.createdAt
   }).from(users).where(eq(users.id, userId));
 
   if (!user) {
@@ -35,15 +35,15 @@ profileRouter.get("/me", requireAuth, asyncHandler(async (req: AuthenticatedRequ
   res.json({ ok: true, data: user });
 }));
 
-// Update user profile (email only for now)
+// Update user profile (email and display name)
 profileRouter.patch("/me", requireAuth, asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
-  const userId = req.user?.userId;
+  const userId = req.session?.userId;
   if (!userId) {
     res.status(401).json({ error: "Unauthorized" });
     return;
   }
 
-  const { email } = req.body ?? {};
+  const { email, displayName } = req.body ?? {};
   if (!email) {
     res.status(400).json({ error: "Email is required" });
     return;
@@ -62,7 +62,7 @@ profileRouter.patch("/me", requireAuth, asyncHandler(async (req: AuthenticatedRe
   const [updatedUser] = await db.update(users)
     .set({ 
       email: email.toLowerCase(),
-      updatedAt: new Date()
+      displayName: displayName || null
     })
     .where(eq(users.id, userId))
     .returning({
@@ -71,8 +71,8 @@ profileRouter.patch("/me", requireAuth, asyncHandler(async (req: AuthenticatedRe
       role: users.role,
       schoolId: users.schoolId,
       active: users.active,
-      createdAt: users.createdAt,
-      updatedAt: users.updatedAt
+      displayName: users.displayName,
+      createdAt: users.createdAt
     });
 
   if (!updatedUser) {
@@ -85,7 +85,7 @@ profileRouter.patch("/me", requireAuth, asyncHandler(async (req: AuthenticatedRe
 
 // Change password
 profileRouter.post("/me/password", requireAuth, asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
-  const userId = req.user?.userId;
+  const userId = req.session?.userId;
   if (!userId) {
     res.status(401).json({ error: "Unauthorized" });
     return;
@@ -126,8 +126,7 @@ profileRouter.post("/me/password", requireAuth, asyncHandler(async (req: Authent
   // Update password
   await db.update(users)
     .set({ 
-      passwordHash: newPasswordHash,
-      updatedAt: new Date()
+      passwordHash: newPasswordHash
     })
     .where(eq(users.id, userId));
 
