@@ -12,16 +12,16 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes (August 15, 2025)
 
-### New Slim Architecture Implementation Completed
-- **Complete Restart**: Implemented fresh PassPilot architecture with clean cookie-based authentication system
-- **Simplified Database Schema**: Successfully migrated to 4-table structure with serial integer IDs (schools, users, kiosk_devices, passes)
-- **Cookie Authentication**: Replaced complex OIDC with secure signed cookie sessions using bcrypt password hashing
-- **Modular Service Layer**: Created dedicated services for users, schools, and passes with proper separation of concerns
-- **Route Structure**: Organized into public, auth, admin, passes, and kiosk route modules with appropriate middleware
-- **Rate Limiting**: Built-in protection for authentication endpoints and kiosk functionality
-- **Error Handling**: Comprehensive async error handlers with monitoring integration hooks
-- **Database Seeding**: Working seed script creates demo school with admin, teacher, and superadmin accounts
-- **Full API Testing**: All endpoints verified working - authentication, pass creation/management, admin functions
+### Enhanced Student Management System Implementation Completed
+- **Database Migration Success**: Successfully migrated from 4-table to 7-table enhanced structure supporting structured student management
+- **New Schema Tables**: Added grades, students, teacher_grade_map tables with proper foreign key relationships and cascade deletes  
+- **Enhanced Pass System**: Passes now support both legacy free-form student names and structured student ID-based approaches
+- **Rich Pass Data**: Pass listings now include joined student information (name, student code, grade) and issuer details
+- **Flexible Pass Types**: Support for general, discipline, nurse, and custom pass types with optional custom reasons
+- **Backward Compatibility**: Legacy passes continue to work alongside enhanced structured passes
+- **Multi-Grade Support**: Teachers can manage multiple grades with proper grade-to-student relationships
+- **Student Lookup**: Automatic student name population when creating passes via studentId
+- **Database Constraints**: Made student_name and reason fields nullable to support enhanced pass creation workflows
 
 ### Architectural Decisions Made
 - **Session Management**: Signed cookies with HttpOnly, SameSite, and environment-appropriate secure flags
@@ -39,20 +39,13 @@ Preferred communication style: Simple, everyday language.
 - Clean migration completed with "run once and forget" approach
 - Database connection tested and verified with `SELECT 1;`
 
-### Database Schema Hardening Completed
-- **NOT NULL Constraints**: Added NOT NULL constraints to all essential fields (created_at, updated_at, active, core required fields)
-- **Cascade Deletes**: Implemented proper CASCADE DELETE relationships for referential integrity
-- **Sane Defaults**: Applied sensible defaults for boolean fields (active=true) and timestamps (defaultNow())
-- **Unique Constraints**: Added unique constraint on kiosk device tokens for security
-- **Multi-school Isolation**: Required schoolId for all user operations ensuring data separation
-- **Authentication Fixed**: Added getDefaultSchool() method and proper school assignment in auth flow
-- **TypeScript Compliance**: Resolved all server-side TypeScript errors with strict null checking
-
-### Simplified Architecture
-- Removed complex grade/student management in favor of simple student name field in passes
-- Pass creation now only requires student name and reason (Bathroom, Nurse, Office, Water, Other)
-- Multi-school support enabled with schoolId foreign keys
-- Kiosk mode support with device token authentication
+### Enhanced Database Schema  
+- **Complete Schema**: Schools, users, grades, students, teacher_grade_map, passes, kiosk_devices tables with full relationships
+- **Foreign Key Integrity**: Proper relationships between all entities with cascade delete protection
+- **Multi-school Isolation**: All entities properly scoped by schoolId for tenant separation
+- **Flexible Pass Model**: Supports both legacy (studentName) and structured (studentId) approaches
+- **Enhanced Pass Types**: General, discipline, nurse, custom with optional custom reasons
+- **Student Management**: Full student roster with grade relationships and student codes
 
 ### Strict TypeScript Configuration Implemented
 - Implemented ruthless null checking with strict compiler options
@@ -136,12 +129,15 @@ Preferred communication style: Simple, everyday language.
 ### Database Design
 - **Database**: PostgreSQL via Neon serverless with connection pooling
 - **ORM**: Drizzle ORM with TypeScript schema definitions
-- **Schema Structure** (Updated August 15, 2025):
-  - Schools table with multi-school support (id, name, seatsAllowed, active)
-  - Users table for teacher/admin authentication with school association (id, email, passwordHash, role, schoolId, active)
-  - Kiosk devices table for student self-service stations (id, schoolId, room, pinHash, token, active)
-  - Passes table for simplified pass tracking (id, studentName, reason, issuedByUserId, schoolId, status, startsAt, endsAt)
-  - Sessions table for authentication session persistence
+- **Enhanced Schema Structure** (Updated August 15, 2025):
+  - **Schools**: Multi-school support (id, name, seatsAllowed, active)
+  - **Users**: Teacher/admin authentication with school association (id, email, passwordHash, role, schoolId, active)
+  - **Grades**: Grade level management (id, schoolId, name, createdAt)
+  - **Students**: Student roster with grade relationships (id, schoolId, gradeId, name, studentCode, createdAt)
+  - **Teacher Grade Map**: Teacher-to-grade assignments (userId, schoolId, gradeId)
+  - **Passes**: Enhanced pass tracking supporting both legacy and structured approaches (id, studentId, studentName, reason, type, customReason, issuedByUserId, schoolId, status, startsAt, endsAt)
+  - **Kiosk Devices**: Student self-service stations (id, schoolId, room, pinHash, token, active)
+  - **Sessions**: Authentication session persistence
 
 ### Authentication & Authorization
 - **Provider**: Replit OIDC (OpenID Connect) integration

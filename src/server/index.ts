@@ -7,6 +7,8 @@ import { publicRouter } from './routes/public';
 import { authRouter } from './routes/auth';
 import { adminRouter } from './routes/admin';
 import { passesRouter } from './routes/passes';
+import { gradesRouter } from './routes/grades';
+import { studentsRouter } from './routes/students';
 import { kioskRouter } from './routes/kiosk';
 
 const app = express();
@@ -21,6 +23,8 @@ app.use('/', publicRouter);
 app.use('/', authRouter);
 app.use('/admin', adminRouter);
 app.use('/passes', passesRouter);
+app.use('/grades', gradesRouter);
+app.use('/students', studentsRouter);
 app.use('/kiosk', kioskRouter);
 
 app.use(notFound);

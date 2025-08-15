@@ -17,6 +17,10 @@ export type Session = {
   iat: number;
 };
 
+export interface AuthenticatedRequest extends Request {
+  session?: Session;
+}
+
 export function sign(value: string, secret: string) {
   const sig = crypto.createHmac(ALGO, secret).update(value).digest('base64url');
   return `${value}.${sig}`;
@@ -62,7 +66,7 @@ export function readSession(req: Request): Session | null {
 export function requireAuth(req: Request, res: Response, next: NextFunction) {
   const s = readSession(req);
   if (!s || !s.userId || !s.schoolId) return res.status(401).json({ error: 'Unauthorized' });
-  (req as any).user = s;
+  (req as AuthenticatedRequest).session = s;
   next();
 }
 

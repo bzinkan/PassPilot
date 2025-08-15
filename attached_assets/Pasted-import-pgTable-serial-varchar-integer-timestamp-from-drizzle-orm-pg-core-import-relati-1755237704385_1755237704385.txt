@@ -1,0 +1,42 @@
+import { pgTable, serial, varchar, integer, timestamp } from 'drizzle-orm/pg-core';
+import { relations } from 'drizzle-orm';
+
+// === Grades (per school) ===
+export const grades = pgTable('grades', {
+  id: serial('id').primaryKey(),
+  schoolId: integer('school_id').references(() => schools.id).notNull(),
+  name: varchar('name', { length: 80 }).notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+});
+
+// === Students (belong to a grade & school) ===
+export const students = pgTable('students', {
+  id: serial('id').primaryKey(),
+  schoolId: integer('school_id').references(() => schools.id).notNull(),
+  gradeId: integer('grade_id').references(() => grades.id).notNull(),
+  name: varchar('name', { length: 140 }).notNull(),
+  studentCode: varchar('student_code', { length: 80 }), // optional external ID
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+});
+
+// === Teacher ↔ Grade selections (Roster tabs a teacher has chosen) ===
+export const teacherGradeMap = pgTable('teacher_grade_map', {
+  userId: integer('user_id').references(() => users.id).notNull(),
+  schoolId: integer('school_id').references(() => schools.id).notNull(),
+  gradeId: integer('grade_id').references(() => grades.id).notNull(),
+});
+
+// === Passes table (updated) ===
+export const passes = pgTable('passes', {
+  id: serial('id').primaryKey(),
+  studentId: integer('student_id').references(() => students.id),
+  studentName: varchar('student_name', { length: 140 }),
+  reason: varchar('reason', { length: 200 }), // legacy optional
+  type: varchar('type', { length: 20 }).notNull().default('general'), // 'general'|'nurse'|'discipline'|'custom'
+  customReason: varchar('custom_reason', { length: 200 }),
+  issuedByUserId: integer('issued_by_user_id').references(() => users.id).notNull(),
+  schoolId: integer('school_id').references(() => schools.id).notNull(),
+  status: varchar('status', { length: 20 }).notNull().default('active'),
+  startsAt: timestamp('starts_at', { withTimezone: true }).defaultNow().notNull(),
+  endsAt: timestamp('ends_at', { withTimezone: true }),
+});

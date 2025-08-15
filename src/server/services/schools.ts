@@ -1,5 +1,5 @@
 import { db } from '../db/client';
-import { schools } from '../db/schema';
+import { schools } from '@shared/schema';
 import { eq } from 'drizzle-orm';
 
 export async function createSchool(name: string, seatsAllowed = 50) {

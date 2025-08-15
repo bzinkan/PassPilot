@@ -1,5 +1,5 @@
 import { db } from '../db/client';
-import { users, type Role } from '../db/schema';
+import { users, type Role } from '@shared/schema';
 import { eq, and } from 'drizzle-orm';
 import bcrypt from 'bcryptjs';
 
