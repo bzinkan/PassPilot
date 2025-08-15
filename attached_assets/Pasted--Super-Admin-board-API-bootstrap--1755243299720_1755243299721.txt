@@ -1,0 +1,169 @@
+// ==============================
+// Super Admin board (API + bootstrap)
+// ==============================
+// Files to add:
+//   1) src/server/routes/sa.ts            (this file)
+// How to mount in index.ts:
+//   import { saRouter } from './routes/sa';
+//   app.use('/sa', saRouter);
+//
+// What you get:
+//   - /sa/bootstrap (one-time) → creates the first superadmin using a shared secret
+//   - /sa/schools  (list/create/update)
+//   - /sa/users    (list by school, cross-tenant actions)
+//   - /sa/audits   (recent logs by school)
+//
+// Security:
+//   - All /sa/* routes require role 'superadmin'
+//   - /sa/bootstrap requires env SA_BOOTSTRAP_SECRET and only works if no superadmin exists yet
+
+import { Router } from 'express';
+import { asyncHandler } from '../middleware/asyncHandler';
+import { requireAuth, requireRole, setSession } from '../middleware/auth';
+import { db } from '../db/client';
+import { users, schools, audits } from '../db/schema';
+import { and, desc, eq, lte, sql } from 'drizzle-orm';
+import bcrypt from 'bcryptjs';
+import { createSchool } from '../services/schools';
+import { createUser } from '../services/users';
+import { createInvite } from '../services/registration';
+
+export const saRouter = Router();
+
+// ------------------------------
+// 1) One-time bootstrap superadmin
+// ------------------------------
+// POST /sa/bootstrap { email, password }
+// - Requires env SA_BOOTSTRAP_SECRET passed as header: x-bootstrap-secret
+// - Only works if there is no existing superadmin
+saRouter.post('/bootstrap', asyncHandler(async (req, res) => {
+  const headerSecret = String(req.headers['x-bootstrap-secret'] || '');
+  const configured = process.env.SA_BOOTSTRAP_SECRET || '';
+  if (!configured || headerSecret !== configured) return res.status(401).json({ error: 'Unauthorized' });
+
+  // Does a superadmin already exist?
+  const [existing] = await db.select({ id: users.id }).from(users).where(eq(users.role, 'superadmin')).limit(1);
+  if (existing) return res.status(409).json({ error: 'Already initialized' });
+
+  const { email, password } = req.body ?? {};
+  if (!email || !password) return res.status(400).json({ error: 'Missing email/password' });
+
+  const passwordHash = await bcrypt.hash(String(password), 10);
+  // Create a placeholder school for SA context if needed (or use first school later)
+  const [s] = await db.insert(schools).values({ name: 'Super Admin (global)', seatsAllowed: 0, active: true }).returning();
+  const [sa] = await db.insert(users).values({
+    email: String(email).toLowerCase(),
+    passwordHash,
+    role: 'superadmin',
+    schoolId: s.id,
+    active: true
+  }).returning();
+
+  // Optional: sign them in immediately
+  setSession(res, { userId: sa.id, schoolId: s.id, role: 'superadmin', iat: Date.now() });
+  res.json({ ok: true, superadminId: sa.id });
+}));
+
+// All remaining /sa/* require superadmin
+saRouter.use(requireAuth, requireRole('superadmin'));
+
+// ------------------------------
+// 2) Schools
+// ------------------------------
+// GET /sa/schools → list all schools
+saRouter.get('/schools', asyncHandler(async (_req, res) => {
+  const list = await db.select().from(schools).orderBy(desc(schools.createdAt));
+  res.json({ schools: list });
+}));
+
+// POST /sa/schools { name, seatsAllowed }
+saRouter.post('/schools', asyncHandler(async (req, res) => {
+  const { name, seatsAllowed } = req.body ?? {};
+  if (!name) return res.status(400).json({ error: 'Missing name' });
+  const s = await createSchool(String(name), seatsAllowed ? Number(seatsAllowed) : 50);
+  res.json({ school: s });
+}));
+
+// PATCH /sa/schools/:id { seatsAllowed?, active? }
+saRouter.patch('/schools/:id', asyncHandler(async (req, res) => {
+  const id = Number(req.params.id);
+  const patch: any = {};
+  if (req.body?.seatsAllowed !== undefined) patch.seatsAllowed = Number(req.body.seatsAllowed);
+  if (req.body?.active !== undefined) patch.active = Boolean(req.body.active);
+  const [s] = await db.update(schools).set(patch).where(eq(schools.id, id)).returning();
+  if (!s) return res.status(404).json({ error: 'Not found' });
+  res.json({ school: s });
+}));
+
+// ------------------------------
+// 3) Users (cross-tenant)
+// ------------------------------
+// GET /sa/users?schoolId=123 → list users in a school
+saRouter.get('/users', asyncHandler(async (req, res) => {
+  const schoolId = Number(req.query.schoolId);
+  if (!schoolId) return res.status(400).json({ error: 'schoolId required' });
+  const list = await db.select({ id: users.id, email: users.email, role: users.role, active: users.active, createdAt: users.createdAt })
+    .from(users)
+    .where(eq(users.schoolId, schoolId));
+  res.json({ users: list });
+}));
+
+// POST /sa/users  { email, role, schoolId, password? }
+// - If password omitted, a v2 invite is created (preferred)
+saRouter.post('/users', asyncHandler(async (req, res) => {
+  const { email, role, schoolId, password } = req.body ?? {};
+  if (!email || !role || !schoolId) return res.status(400).json({ error: 'Missing fields' });
+
+  if (password) {
+    const u = await createUser({ email: String(email), password: String(password), role, schoolId: Number(schoolId) });
+    return res.json({ user: { id: u.id, email: u.email, role: u.role, schoolId: u.schoolId } });
+  }
+
+  const { token, code } = await createInvite({ email: String(email), role, schoolId: Number(schoolId), createdByUserId: 0, expiresInMinutes: 1440 });
+  const activationUrl = `/activate?schoolId=${schoolId}&email=${encodeURIComponent(String(email).toLowerCase())}`;
+  res.json({ ok: true, activationUrl, code, expiresAt: token.expiresAt });
+}));
+
+// POST /sa/users/:id/promote  { role } → promote to admin or superadmin
+saRouter.post('/users/:id/promote', asyncHandler(async (req, res) => {
+  const id = Number(req.params.id);
+  const newRole = String(req.body?.role || 'admin'); // 'admin' | 'superadmin'
+  if (!['admin','superadmin'].includes(newRole)) return res.status(400).json({ error: 'Invalid role' });
+  const [u] = await db.update(users).set({ role: newRole }).where(eq(users.id, id)).returning();
+  if (!u) return res.status(404).json({ error: 'User not found' });
+  res.json({ user: u });
+}));
+
+// POST /sa/users/:id/demote  { role } → demote to teacher or admin
+saRouter.post('/users/:id/demote', asyncHandler(async (req, res) => {
+  const id = Number(req.params.id);
+  const newRole = String(req.body?.role || 'teacher'); // 'admin' | 'teacher'
+  if (!['admin','teacher'].includes(newRole)) return res.status(400).json({ error: 'Invalid role' });
+  const [u] = await db.update(users).set({ role: newRole }).where(eq(users.id, id)).returning();
+  if (!u) return res.status(404).json({ error: 'User not found' });
+  res.json({ user: u });
+}));
+
+// PATCH /sa/users/:id/active { active }
+saRouter.patch('/users/:id/active', asyncHandler(async (req, res) => {
+  const id = Number(req.params.id);
+  const active = Boolean(req.body?.active);
+  const [u] = await db.update(users).set({ active }).where(eq(users.id, id)).returning();
+  if (!u) return res.status(404).json({ error: 'User not found' });
+  res.json({ user: u });
+}));
+
+// ------------------------------
+// 4) Audits
+// ------------------------------
+// GET /sa/audits?schoolId=123&limit=100
+saRouter.get('/audits', asyncHandler(async (req, res) => {
+  const schoolId = Number(req.query.schoolId);
+  const limit = Math.min(Number(req.query.limit || 100), 500);
+  if (!schoolId) return res.status(400).json({ error: 'schoolId required' });
+  const list = await db.select().from(audits)
+    .where(eq(audits.schoolId, schoolId))
+    .orderBy(desc(audits.createdAt))
+    .limit(limit);
+  res.json({ audits: list });
+}));
