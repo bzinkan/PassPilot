@@ -182,8 +182,8 @@
   /* Glass Morphism */
   .glass {
     backdrop-filter: blur(12px) saturate(200%);
-    background-color: var(--pilot-glass);
-    border: 1px solid hsl(220, 50%, 90%, 0.18);
+    background-color: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
   }
   
   /* Text Colors */

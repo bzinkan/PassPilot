@@ -72,37 +72,37 @@ export default function Landing() {
             </h2>
             
             <div className="grid gap-6">
-              <div className="flex items-start space-x-4 p-6 glass rounded-xl shadow-pilot">
-                <div className="bg-white/20 p-3 rounded-xl">
+              <div className="flex items-start space-x-4 p-6 bg-white/10 backdrop-blur-md border border-white/20 rounded-xl shadow-pilot">
+                <div className="bg-emerald-500/90 p-3 rounded-xl shadow-lg">
                   <Users className="h-6 w-6 text-white" />
                 </div>
                 <div>
                   <h3 className="font-semibold text-white mb-2 text-lg">Digital Pass Management</h3>
-                  <p className="text-white/80 leading-relaxed">
+                  <p className="text-white/90 leading-relaxed">
                     Issue and track student passes digitally with real-time status updates.
                   </p>
                 </div>
               </div>
 
-              <div className="flex items-start space-x-4 p-6 glass rounded-xl shadow-pilot">
-                <div className="bg-white/20 p-3 rounded-xl">
+              <div className="flex items-start space-x-4 p-6 bg-white/10 backdrop-blur-md border border-white/20 rounded-xl shadow-pilot">
+                <div className="bg-orange-500/90 p-3 rounded-xl shadow-lg">
                   <Shield className="h-6 w-6 text-white" />
                 </div>
                 <div>
                   <h3 className="font-semibold text-white mb-2 text-lg">Enhanced Safety</h3>
-                  <p className="text-white/80 leading-relaxed">
+                  <p className="text-white/90 leading-relaxed">
                     Know where students are at all times with comprehensive tracking.
                   </p>
                 </div>
               </div>
 
-              <div className="flex items-start space-x-4 p-6 glass rounded-xl shadow-pilot">
-                <div className="bg-white/20 p-3 rounded-xl">
+              <div className="flex items-start space-x-4 p-6 bg-white/10 backdrop-blur-md border border-white/20 rounded-xl shadow-pilot">
+                <div className="bg-purple-500/90 p-3 rounded-xl shadow-lg">
                   <BarChart3 className="h-6 w-6 text-white" />
                 </div>
                 <div>
                   <h3 className="font-semibold text-white mb-2 text-lg">Detailed Reports</h3>
-                  <p className="text-white/80 leading-relaxed">
+                  <p className="text-white/90 leading-relaxed">
                     Generate insights on student movement patterns and pass usage.
                   </p>
                 </div>
