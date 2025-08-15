@@ -72,10 +72,10 @@ export function requireAuth(req: Request, res: Response, next: NextFunction) {
 
 export function requireRole(role: 'admin' | 'superadmin') {
   return (req: Request, res: Response, next: NextFunction) => {
-    const u = (req as any).user as Session | undefined;
-    if (!u) return res.status(401).json({ error: 'Unauthorized' });
-    if (role === 'admin' && !['admin', 'superadmin'].includes(u.role)) return res.status(403).json({ error: 'Forbidden' });
-    if (role === 'superadmin' && u.role !== 'superadmin') return res.status(403).json({ error: 'Forbidden' });
+    const s = (req as AuthenticatedRequest).session;
+    if (!s) return res.status(401).json({ error: 'Unauthorized' });
+    if (role === 'admin' && !['admin', 'superadmin'].includes(s.role)) return res.status(403).json({ error: 'Forbidden' });
+    if (role === 'superadmin' && s.role !== 'superadmin') return res.status(403).json({ error: 'Forbidden' });
     next();
   };
 }
