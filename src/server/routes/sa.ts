@@ -19,6 +19,40 @@ import { createInvite } from '../services/registration';
 
 export const saRouter = Router();
 
+// Demo setup endpoint - creates demo data without authentication
+saRouter.post('/demo-setup', asyncHandler(async (req: Request, res: Response) => {
+  try {
+    // Create demo school
+    const [school] = await db.insert(schools).values({
+      name: 'Riverside Elementary Demo',
+      seatsAllowed: 500,
+      active: true
+    }).returning();
+
+    // Create demo admin user
+    const passwordHash = await bcrypt.hash('demo123', 10);
+    const [admin] = await db.insert(users).values({
+      email: 'admin@demo.com',
+      passwordHash,
+      role: 'admin',
+      schoolId: school.id,
+      displayName: 'Demo Admin',
+      active: true
+    }).returning();
+
+    res.json({ 
+      ok: true, 
+      data: { 
+        school: school.name, 
+        admin: admin.email,
+        message: 'Demo environment created successfully!' 
+      } 
+    });
+  } catch (error: any) {
+    res.status(500).json({ ok: false, error: error.message });
+  }
+}));
+
 // ------------------------------
 // 1) One-time bootstrap superadmin
 // ------------------------------
