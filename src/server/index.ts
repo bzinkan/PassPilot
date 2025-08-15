@@ -10,6 +10,7 @@ import { passesRouter } from './routes/passes';
 import { gradesRouter } from './routes/grades';
 import { studentsRouter } from './routes/students';
 import { kioskRouter } from './routes/kiosk';
+import { rosterRouter, myClassRouter } from './routes/roster';
 
 const app = express();
 app.set('trust proxy', 1);
@@ -26,6 +27,8 @@ app.use('/passes', passesRouter);
 app.use('/grades', gradesRouter);
 app.use('/students', studentsRouter);
 app.use('/kiosk', kioskRouter);
+app.use('/', rosterRouter);
+app.use('/', myClassRouter);
 
 app.use(notFound);
 app.use(errorHandler);

@@ -61,9 +61,9 @@ export const passes = pgTable('passes', {
   id: serial('id').primaryKey(),
   // Enhanced fields (to be added)
   studentId: integer('student_id').references(() => students.id),
-  // Legacy fields (current database)
-  studentName: varchar('student_name', { length: 140 }).notNull(),
-  reason: varchar('reason', { length: 200 }).notNull(),
+  // Legacy fields (current database) - now nullable for enhanced pass creation
+  studentName: varchar('student_name', { length: 140 }),
+  reason: varchar('reason', { length: 200 }),
   // New structured fields (to be added)
   type: varchar('type', { length: 20 }).default('general'), // 'general'|'nurse'|'discipline'|'custom'
   customReason: varchar('custom_reason', { length: 200 }),
