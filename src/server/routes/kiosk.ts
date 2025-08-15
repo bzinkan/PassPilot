@@ -6,8 +6,7 @@ import { requireKiosk } from '../middleware/kiosk';
 
 export const kioskRouter = Router();
 
-// Login moved to /kiosk/login in kiosk_auth.ts
-
+// Apply kiosk authentication to all routes
 kioskRouter.use(requireKiosk);
 
 kioskRouter.post('/passes', rateLimit({ windowMs: 10_000, max: 12 }), asyncHandler(async (req, res) => {
@@ -20,7 +19,7 @@ kioskRouter.post('/passes', rateLimit({ windowMs: 10_000, max: 12 }), asyncHandl
     issuedByUserId: Number(issuedByUserId), 
     schoolId: kiosk.schoolId,
     issuedVia: 'kiosk',
-    kioskDeviceId: kiosk.kioskDeviceId
+    kioskDeviceId: (req as any).kiosk.kioskDeviceId
   });
   res.json({ pass: p });
 }));

@@ -32,8 +32,8 @@ app.use('/passes', passesRouter);
 app.use('/reports', reportsRouter);
 app.use('/grades', gradesRouter);
 app.use('/students', studentsRouter);
-app.use('/kiosk', kioskRouter);
 app.use('/', kioskAuthRouter);
+app.use('/kiosk', kioskRouter);
 app.use('/', rosterRouter);
 app.use('/', myClassRouter);
 
