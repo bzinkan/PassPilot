@@ -56,12 +56,19 @@ function updateUserSession(
 async function upsertUser(
   claims: any,
 ): Promise<void> {
+  // Get the default school - in a real system, this would be determined by user registration flow
+  const defaultSchool = await storage.getDefaultSchool();
+  if (!defaultSchool) {
+    throw new Error("No default school found. Please create a school first.");
+  }
+  
   await storage.upsertUser({
     id: claims["sub"],
     email: claims["email"],
     firstName: claims["first_name"],
     lastName: claims["last_name"],
     profileImageUrl: claims["profile_image_url"],
+    schoolId: defaultSchool.id,
   });
 }
 

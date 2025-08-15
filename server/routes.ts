@@ -32,11 +32,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/schools/:id', isAuthenticated, async (req: any, res): Promise<void> => {
+  app.get('/api/schools/:id', isAuthenticated, async (req: any, res) => {
     try {
       const school = await storage.getSchool(req.params.id);
       if (!school) {
-        return res.status(404).json({ message: "School not found" });
+        res.status(404).json({ message: "School not found" });
+        return;
       }
       res.json(school);
     } catch (error) {
@@ -68,12 +69,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Pass management
-  app.post('/api/passes', isAuthenticated, async (req: any, res): Promise<void> => {
+  app.post('/api/passes', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const user = await storage.getUser(userId);
       if (!user) {
-        return res.status(401).json({ message: "User not found" });
+        res.status(401).json({ message: "User not found" });
+        return;
       }
       
       const passData = insertPassSchema.parse({ 
@@ -89,12 +91,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/passes/active', isAuthenticated, async (req: any, res): Promise<void> => {
+  app.get('/api/passes/active', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const user = await storage.getUser(userId);
       if (!user) {
-        return res.status(401).json({ message: "User not found" });
+        res.status(401).json({ message: "User not found" });
+        return;
       }
       
       const passes = await storage.getActivePassesBySchool(user.schoolId);
@@ -105,12 +108,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/passes', isAuthenticated, async (req: any, res): Promise<void> => {
+  app.get('/api/passes', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const user = await storage.getUser(userId);
       if (!user) {
-        return res.status(401).json({ message: "User not found" });
+        res.status(401).json({ message: "User not found" });
+        return;
       }
       
       const limit = req.query.limit ? parseInt(req.query.limit as string) : undefined;
@@ -132,12 +136,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/statistics', isAuthenticated, async (req: any, res): Promise<void> => {
+  app.get('/api/statistics', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const user = await storage.getUser(userId);
       if (!user) {
-        return res.status(401).json({ message: "User not found" });
+        res.status(401).json({ message: "User not found" });
+        return;
       }
       
       const dateRange = req.query.from && req.query.to ? {
@@ -154,14 +159,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Kiosk endpoints
-  app.post('/api/kiosk/pass', async (req, res): Promise<void> => {
+  app.post('/api/kiosk/pass', async (req, res) => {
     try {
       const { studentName, reason, kioskToken } = req.body;
       
       // Verify kiosk device
       const device = await storage.getKioskDeviceByToken(kioskToken);
       if (!device) {
-        return res.status(401).json({ message: "Invalid kiosk token" });
+        res.status(401).json({ message: "Invalid kiosk token" });
+        return;
       }
 
       // Create pass data

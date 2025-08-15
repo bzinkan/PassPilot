@@ -26,6 +26,7 @@ export interface IStorage {
   // School operations
   createSchool(school: InsertSchool): Promise<School>;
   getSchool(id: string): Promise<School | undefined>;
+  getDefaultSchool(): Promise<School | undefined>;
   
   // Kiosk device operations
   createKioskDevice(device: InsertKioskDevice): Promise<KioskDevice>;
@@ -81,6 +82,16 @@ export class DatabaseStorage implements IStorage {
 
   async getSchool(id: string): Promise<School | undefined> {
     const [school] = await db.select().from(schools).where(eq(schools.id, id));
+    return school;
+  }
+
+  async getDefaultSchool(): Promise<School | undefined> {
+    const [school] = await db
+      .select()
+      .from(schools)
+      .where(eq(schools.active, true))
+      .orderBy(schools.createdAt)
+      .limit(1);
     return school;
   }
 

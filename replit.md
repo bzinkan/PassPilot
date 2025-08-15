@@ -18,6 +18,15 @@ Preferred communication style: Simple, everyday language.
 - Clean migration completed with "run once and forget" approach
 - Database connection tested and verified with `SELECT 1;`
 
+### Database Schema Hardening Completed
+- **NOT NULL Constraints**: Added NOT NULL constraints to all essential fields (created_at, updated_at, active, core required fields)
+- **Cascade Deletes**: Implemented proper CASCADE DELETE relationships for referential integrity
+- **Sane Defaults**: Applied sensible defaults for boolean fields (active=true) and timestamps (defaultNow())
+- **Unique Constraints**: Added unique constraint on kiosk device tokens for security
+- **Multi-school Isolation**: Required schoolId for all user operations ensuring data separation
+- **Authentication Fixed**: Added getDefaultSchool() method and proper school assignment in auth flow
+- **TypeScript Compliance**: Resolved all server-side TypeScript errors with strict null checking
+
 ### Simplified Architecture
 - Removed complex grade/student management in favor of simple student name field in passes
 - Pass creation now only requires student name and reason (Bathroom, Nurse, Office, Water, Other)
