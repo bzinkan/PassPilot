@@ -1,6 +1,7 @@
 import { Router } from 'express';
+import type { Request, Response } from 'express';
 import { asyncHandler } from '../middleware/asyncHandler';
-import { requireAuth, requireRole } from '../middleware/auth';
+import { requireAuth, requireRole, type AuthenticatedRequest } from '../middleware/auth';
 import { requireTenant } from '../middleware/tenant';
 import { db } from '../db/client';
 import { users, audits, schools } from '@shared/schema';
@@ -14,8 +15,8 @@ export const adminRouter = Router();
 adminRouter.use(requireAuth, requireRole('admin'));
 
 // School admin overview - KPI cards and quick actions
-adminRouter.get('/overview', asyncHandler(async (req, res) => {
-  const { schoolId } = (req as any).session;
+adminRouter.get('/overview', asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+  const { schoolId } = req.session!;
   
   // Get counts for KPI cards
   const [usersCount] = await db.select({ count: count() }).from(users).where(eq(users.schoolId, schoolId));
@@ -26,8 +27,8 @@ adminRouter.get('/overview', asyncHandler(async (req, res) => {
   res.json({ 
     ok: true, 
     data: {
-      totalUsers: usersCount.count || 0,
-      activePasses: activePassesCount.count || 0,
+      totalUsers: usersCount?.count || 0,
+      activePasses: activePassesCount?.count || 0,
       schoolId: schoolId
     }
   });
