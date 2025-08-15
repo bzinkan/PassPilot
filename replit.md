@@ -10,6 +10,20 @@ The system features a mobile-first design with a React frontend, Express.js back
 
 Preferred communication style: Simple, everyday language.
 
+## Recent Changes (August 15, 2025)
+
+### Database Schema Migration Completed
+- Successfully migrated from complex grade/student model to simplified multi-school architecture
+- Implemented 4 core tables: schools, users, kiosk_devices, passes
+- Clean migration completed with "run once and forget" approach
+- Database connection tested and verified with `SELECT 1;`
+
+### Simplified Architecture
+- Removed complex grade/student management in favor of simple student name field in passes
+- Pass creation now only requires student name and reason (Bathroom, Nurse, Office, Water, Other)
+- Multi-school support enabled with schoolId foreign keys
+- Kiosk mode support with device token authentication
+
 ## System Architecture
 
 ### Frontend Architecture
@@ -31,12 +45,11 @@ Preferred communication style: Simple, everyday language.
 ### Database Design
 - **Database**: PostgreSQL via Neon serverless with connection pooling
 - **ORM**: Drizzle ORM with TypeScript schema definitions
-- **Schema Structure**:
-  - Users table for teacher authentication and profiles
-  - Grades table for class/grade level organization
-  - Students table with optional student ID and grade association
-  - Pass types table for customizable pass categories (bathroom, nurse, office, etc.)
-  - Passes table tracking issued passes with timestamps and return status
+- **Schema Structure** (Updated August 15, 2025):
+  - Schools table with multi-school support (id, name, seatsAllowed, active)
+  - Users table for teacher/admin authentication with school association (id, email, passwordHash, role, schoolId, active)
+  - Kiosk devices table for student self-service stations (id, schoolId, room, pinHash, token, active)
+  - Passes table for simplified pass tracking (id, studentName, reason, issuedByUserId, schoolId, status, startsAt, endsAt)
   - Sessions table for authentication session persistence
 
 ### Authentication & Authorization

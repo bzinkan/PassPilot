@@ -23,143 +23,133 @@ export const sessions = pgTable(
   (table) => [index("IDX_session_expire").on(table.expire)],
 );
 
-// User storage table for Replit Auth
-export const users = pgTable("users", {
+// Schools table
+export const schools = pgTable("schools", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  email: varchar("email").unique(),
-  firstName: varchar("first_name"),
-  lastName: varchar("last_name"),
-  profileImageUrl: varchar("profile_image_url"),
+  name: varchar("name").notNull(),
+  seatsAllowed: integer("seats_allowed").notNull().default(100),
+  active: boolean("active").default(true),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-// Grade levels table
-export const grades = pgTable("grades", {
+// Users table (updated for multi-school support)
+export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  name: varchar("name").notNull(), // e.g., "Grade 6th", "Grade 7th"
-  teacherId: varchar("teacher_id").notNull().references(() => users.id),
-  isActive: boolean("is_active").default(true),
+  email: varchar("email").unique().notNull(),
+  passwordHash: varchar("password_hash"), // For local auth if needed
+  role: varchar("role").notNull().default("teacher"), // "admin", "teacher"
+  schoolId: varchar("school_id").notNull().references(() => schools.id),
+  firstName: varchar("first_name"),
+  lastName: varchar("last_name"),
+  profileImageUrl: varchar("profile_image_url"),
+  active: boolean("active").default(true),
   createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-// Students table
-export const students = pgTable("students", {
+// Kiosk devices table
+export const kioskDevices = pgTable("kiosk_devices", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  name: varchar("name").notNull(),
-  studentId: varchar("student_id"),
-  gradeId: varchar("grade_id").notNull().references(() => grades.id),
-  isActive: boolean("is_active").default(true),
+  schoolId: varchar("school_id").notNull().references(() => schools.id),
+  room: varchar("room").notNull(),
+  pinHash: varchar("pin_hash"), // Hashed PIN for kiosk access
+  token: varchar("token").notNull(), // Unique token for device authentication
+  active: boolean("active").default(true),
   createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-// Pass types
-export const passTypes = pgTable("pass_types", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  name: varchar("name").notNull(), // e.g., "Bathroom", "Nurse", "Office"
-  icon: varchar("icon").notNull(), // FontAwesome icon class
-  color: varchar("color").notNull(), // Tailwind color class
-  isDefault: boolean("is_default").default(false),
-});
-
-// Passes table for tracking student movements
+// Passes table (simplified as per requirements)
 export const passes = pgTable("passes", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  studentId: varchar("student_id").notNull().references(() => students.id),
-  passTypeId: varchar("pass_type_id").notNull().references(() => passTypes.id),
-  teacherId: varchar("teacher_id").notNull().references(() => users.id),
-  issuedAt: timestamp("issued_at").defaultNow(),
-  returnedAt: timestamp("returned_at"),
-  duration: integer("duration"), // in minutes
-  status: varchar("status").notNull().default("out"), // "out", "returned", "overdue"
-  notes: text("notes"),
+  studentName: varchar("student_name").notNull(),
+  reason: varchar("reason").notNull(), // e.g., "Bathroom", "Nurse", "Office"
+  issuedByUserId: varchar("issued_by_user_id").notNull().references(() => users.id),
+  schoolId: varchar("school_id").notNull().references(() => schools.id),
+  status: varchar("status").notNull().default("active"), // "active", "returned", "expired"
+  startsAt: timestamp("starts_at").notNull().defaultNow(),
+  endsAt: timestamp("ends_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 // Relations
-export const usersRelations = relations(users, ({ many }) => ({
-  grades: many(grades),
+export const schoolsRelations = relations(schools, ({ many }) => ({
+  users: many(users),
+  kioskDevices: many(kioskDevices),
   passes: many(passes),
 }));
 
-export const gradesRelations = relations(grades, ({ one, many }) => ({
-  teacher: one(users, {
-    fields: [grades.teacherId],
-    references: [users.id],
-  }),
-  students: many(students),
-}));
-
-export const studentsRelations = relations(students, ({ one, many }) => ({
-  grade: one(grades, {
-    fields: [students.gradeId],
-    references: [grades.id],
+export const usersRelations = relations(users, ({ one, many }) => ({
+  school: one(schools, {
+    fields: [users.schoolId],
+    references: [schools.id],
   }),
   passes: many(passes),
 }));
 
-export const passTypesRelations = relations(passTypes, ({ many }) => ({
-  passes: many(passes),
+export const kioskDevicesRelations = relations(kioskDevices, ({ one }) => ({
+  school: one(schools, {
+    fields: [kioskDevices.schoolId],
+    references: [schools.id],
+  }),
 }));
 
 export const passesRelations = relations(passes, ({ one }) => ({
-  student: one(students, {
-    fields: [passes.studentId],
-    references: [students.id],
-  }),
-  passType: one(passTypes, {
-    fields: [passes.passTypeId],
-    references: [passTypes.id],
-  }),
-  teacher: one(users, {
-    fields: [passes.teacherId],
+  issuedByUser: one(users, {
+    fields: [passes.issuedByUserId],
     references: [users.id],
+  }),
+  school: one(schools, {
+    fields: [passes.schoolId],
+    references: [schools.id],
   }),
 }));
 
 // Insert schemas
-export const insertGradeSchema = createInsertSchema(grades).omit({
+export const insertSchoolSchema = createInsertSchema(schools).omit({
   id: true,
   createdAt: true,
+  updatedAt: true,
 });
 
-export const insertStudentSchema = createInsertSchema(students).omit({
+export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
   createdAt: true,
+  updatedAt: true,
 });
 
-export const insertPassTypeSchema = createInsertSchema(passTypes).omit({
+export const insertKioskDeviceSchema = createInsertSchema(kioskDevices).omit({
   id: true,
+  createdAt: true,
+  updatedAt: true,
 });
 
 export const insertPassSchema = createInsertSchema(passes).omit({
   id: true,
-  issuedAt: true,
+  createdAt: true,
+  updatedAt: true,
+  startsAt: true,
 });
 
 // Types
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
-export type Grade = typeof grades.$inferSelect;
-export type InsertGrade = z.infer<typeof insertGradeSchema>;
-export type Student = typeof students.$inferSelect;
-export type InsertStudent = z.infer<typeof insertStudentSchema>;
-export type PassType = typeof passTypes.$inferSelect;
-export type InsertPassType = z.infer<typeof insertPassTypeSchema>;
+export type School = typeof schools.$inferSelect;
+export type InsertSchool = z.infer<typeof insertSchoolSchema>;
+export type InsertUser = z.infer<typeof insertUserSchema>;
+export type KioskDevice = typeof kioskDevices.$inferSelect;
+export type InsertKioskDevice = z.infer<typeof insertKioskDeviceSchema>;
 export type Pass = typeof passes.$inferSelect;
 export type InsertPass = z.infer<typeof insertPassSchema>;
 
 // Extended types with relations
-export type StudentWithGrade = Student & {
-  grade: Grade;
-};
-
 export type PassWithDetails = Pass & {
-  student: Student;
-  passType: PassType;
-  teacher: User;
+  issuedByUser: User;
+  school: School;
 };
 
-export type GradeWithStudents = Grade & {
-  students: Student[];
-  teacher: User;
+export type UserWithSchool = User & {
+  school: School;
 };
