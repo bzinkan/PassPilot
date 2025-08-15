@@ -1,70 +1,135 @@
-import { Router } from 'express';
-import { asyncHandler } from '../middleware/asyncHandler';
-import { requireAuth } from '../middleware/auth';
-import { db } from '../db/client';
-import { users, userSettings } from '@shared/schema';
-import { eq } from 'drizzle-orm';
-import bcrypt from 'bcryptjs';
+import { Router } from "express";
+import type { Request, Response } from "express";
+import { asyncHandler } from "../middleware/asyncHandler";
+import { requireAuth, type AuthenticatedRequest } from "../middleware/auth";
+import { db } from "../db/client";
+import { users } from "../../../shared/schema";
+import { eq } from "drizzle-orm";
+import bcrypt from "bcryptjs";
 
 export const profileRouter = Router();
-profileRouter.use(requireAuth);
 
-// GET /profile -> basic info + settings
-profileRouter.get('/profile', asyncHandler(async (req, res) => {
-  const { userId } = (req as any).session as { userId: number };
-  const [u] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
-  const [s] = await db.select().from(userSettings).where(eq(userSettings.userId, userId)).limit(1);
-  if (!u) return res.status(404).json({ error: 'User not found' });
-  res.json({
-    id: u.id,
-    email: u.email,
-    role: u.role,
-    schoolId: u.schoolId,
-    displayName: u.displayName ?? null,
-    settings: s ?? null
-  });
-}));
-
-// PUT /profile { displayName?, theme?, defaultPassType? }
-profileRouter.put('/profile', asyncHandler(async (req, res) => {
-  const { userId } = (req as any).session as { userId: number };
-  const { displayName, theme, defaultPassType } = req.body ?? {};
-
-  if (displayName !== undefined) {
-    await db.update(users).set({ displayName: String(displayName) }).where(eq(users.id, userId));
+// Get current user profile
+profileRouter.get("/me", requireAuth, asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+  const userId = req.user?.userId;
+  if (!userId) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
   }
 
-  if (theme !== undefined || defaultPassType !== undefined) {
-    // upsert settings row
-    const updateData: any = {};
-    if (theme !== undefined) updateData.theme = String(theme);
-    if (defaultPassType !== undefined) updateData.defaultPassType = String(defaultPassType);
+  const [user] = await db.select({
+    id: users.id,
+    email: users.email,
+    role: users.role,
+    schoolId: users.schoolId,
+    active: users.active,
+    createdAt: users.createdAt,
+    updatedAt: users.updatedAt
+  }).from(users).where(eq(users.id, userId));
 
-    await db.insert(userSettings).values({
-      userId,
-      ...updateData
-    }).onConflictDoUpdate({
-      target: userSettings.userId,
-      set: updateData
+  if (!user) {
+    res.status(404).json({ error: "User not found" });
+    return;
+  }
+
+  res.json({ ok: true, data: user });
+}));
+
+// Update user profile (email only for now)
+profileRouter.patch("/me", requireAuth, asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+  const userId = req.user?.userId;
+  if (!userId) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+
+  const { email } = req.body ?? {};
+  if (!email) {
+    res.status(400).json({ error: "Email is required" });
+    return;
+  }
+
+  // Check if email is already taken by another user
+  const [existingUser] = await db.select({ id: users.id })
+    .from(users)
+    .where(eq(users.email, email.toLowerCase()));
+
+  if (existingUser && existingUser.id !== userId) {
+    res.status(409).json({ error: "Email already in use" });
+    return;
+  }
+
+  const [updatedUser] = await db.update(users)
+    .set({ 
+      email: email.toLowerCase(),
+      updatedAt: new Date()
+    })
+    .where(eq(users.id, userId))
+    .returning({
+      id: users.id,
+      email: users.email,
+      role: users.role,
+      schoolId: users.schoolId,
+      active: users.active,
+      createdAt: users.createdAt,
+      updatedAt: users.updatedAt
     });
+
+  if (!updatedUser) {
+    res.status(500).json({ error: "Failed to update profile" });
+    return;
   }
 
-  res.json({ ok: true });
+  res.json({ ok: true, data: updatedUser });
 }));
 
-// PUT /profile/password { currentPassword, newPassword }
-profileRouter.put('/profile/password', asyncHandler(async (req, res) => {
-  const { userId } = (req as any).session as { userId: number };
+// Change password
+profileRouter.post("/me/password", requireAuth, asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+  const userId = req.user?.userId;
+  if (!userId) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+
   const { currentPassword, newPassword } = req.body ?? {};
-  if (!currentPassword || !newPassword) return res.status(400).json({ error: 'Missing currentPassword/newPassword' });
+  if (!currentPassword || !newPassword) {
+    res.status(400).json({ error: "Current password and new password are required" });
+    return;
+  }
 
-  const [u] = await db.select({ id: users.id, passwordHash: users.passwordHash }).from(users).where(eq(users.id, userId)).limit(1);
-  if (!u) return res.status(404).json({ error: 'User not found' });
+  if (newPassword.length < 8) {
+    res.status(400).json({ error: "New password must be at least 8 characters long" });
+    return;
+  }
 
-  const ok = await bcrypt.compare(String(currentPassword), u.passwordHash);
-  if (!ok) return res.status(400).json({ error: 'Current password incorrect' });
+  // Get current user with password hash
+  const [user] = await db.select({
+    id: users.id,
+    passwordHash: users.passwordHash
+  }).from(users).where(eq(users.id, userId));
 
-  const newHash = await bcrypt.hash(String(newPassword), 10);
-  await db.update(users).set({ passwordHash: newHash }).where(eq(users.id, userId));
-  res.json({ ok: true });
+  if (!user || !user.passwordHash) {
+    res.status(404).json({ error: "User not found or no password set" });
+    return;
+  }
+
+  // Verify current password
+  const isCurrentValid = await bcrypt.compare(currentPassword, user.passwordHash);
+  if (!isCurrentValid) {
+    res.status(401).json({ error: "Current password is incorrect" });
+    return;
+  }
+
+  // Hash new password
+  const newPasswordHash = await bcrypt.hash(newPassword, 10);
+
+  // Update password
+  await db.update(users)
+    .set({ 
+      passwordHash: newPasswordHash,
+      updatedAt: new Date()
+    })
+    .where(eq(users.id, userId));
+
+  res.json({ ok: true, message: "Password updated successfully" });
 }));
