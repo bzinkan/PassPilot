@@ -4,6 +4,7 @@ import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
 import { validate } from "./validate";
 import "./types"; // Import type extensions
+import { invariant, unwrap, safeNumber } from "./utils";
 import {
   IdParams,
   SchoolIdParams,
@@ -94,17 +95,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.user.claims.sub;
       const user = await storage.getUser(userId);
-      if (!user) {
-        res.status(401).json({ message: "User not found" });
-        return;
-      }
+      const validUser = unwrap(user, "User not found");
+      const validSchoolId = unwrap(validUser.schoolId, "User missing schoolId");
       
-      const { studentName, reason } = req.valid.body;
+      const { studentName, reason } = req.valid!.body;
       const passData = { 
         studentName,
         reason,
         issuedByUserId: userId,
-        schoolId: user.schoolId 
+        schoolId: validSchoolId
       };
       const pass = await storage.createPass(passData);
       res.json(pass);
@@ -118,12 +117,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.user.claims.sub;
       const user = await storage.getUser(userId);
-      if (!user) {
-        res.status(401).json({ message: "User not found" });
-        return;
-      }
+      const validUser = unwrap(user, "User not found");
+      const validSchoolId = unwrap(validUser.schoolId, "User missing schoolId");
       
-      const passes = await storage.getActivePassesBySchool(user.schoolId);
+      const passes = await storage.getActivePassesBySchool(validSchoolId);
       res.json(passes);
     } catch (error) {
       console.error("Error fetching active passes:", error);
@@ -135,13 +132,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.user.claims.sub;
       const user = await storage.getUser(userId);
-      if (!user) {
-        res.status(401).json({ message: "User not found" });
-        return;
-      }
+      const validUser = unwrap(user, "User not found");
+      const validSchoolId = unwrap(validUser.schoolId, "User missing schoolId");
       
-      const { limit } = req.valid.query || {};
-      const passes = await storage.getPassesBySchool(user.schoolId, limit);
+      const { limit } = req.valid!.query ?? {};
+      const safeLimit = limit ? safeNumber(limit, 50) : 50;
+      const passes = await storage.getPassesBySchool(validSchoolId, safeLimit);
       res.json(passes);
     } catch (error) {
       console.error("Error fetching passes:", error);

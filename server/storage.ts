@@ -17,6 +17,7 @@ import {
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, isNull, sql } from "drizzle-orm";
+import { invariant, unwrap } from "./utils";
 
 export interface IStorage {
   // User operations (required for Replit Auth)
@@ -74,10 +75,7 @@ export class DatabaseStorage implements IStorage {
   // School operations
   async createSchool(school: InsertSchool): Promise<School> {
     const [newSchool] = await db.insert(schools).values(school).returning();
-    if (!newSchool) {
-      throw new Error("Failed to create school");
-    }
-    return newSchool;
+    return unwrap(newSchool, "Failed to create school");
   }
 
   async getSchool(id: string): Promise<School | undefined> {
@@ -98,10 +96,7 @@ export class DatabaseStorage implements IStorage {
   // Kiosk device operations
   async createKioskDevice(device: InsertKioskDevice): Promise<KioskDevice> {
     const [newDevice] = await db.insert(kioskDevices).values(device).returning();
-    if (!newDevice) {
-      throw new Error("Failed to create kiosk device");
-    }
-    return newDevice;
+    return unwrap(newDevice, "Failed to create kiosk device");
   }
 
   async getKioskDeviceByToken(token: string): Promise<KioskDevice | undefined> {
@@ -122,10 +117,7 @@ export class DatabaseStorage implements IStorage {
   // Pass operations
   async createPass(pass: InsertPass): Promise<Pass> {
     const [newPass] = await db.insert(passes).values(pass).returning();
-    if (!newPass) {
-      throw new Error("Failed to create pass");
-    }
-    return newPass;
+    return unwrap(newPass, "Failed to create pass");
   }
 
   async getActivePassesBySchool(schoolId: string): Promise<PassWithDetails[]> {
@@ -177,10 +169,7 @@ export class DatabaseStorage implements IStorage {
       .where(eq(passes.id, passId))
       .returning();
       
-    if (!updatedPass) {
-      throw new Error("Failed to mark pass as returned");
-    }
-    return updatedPass;
+    return unwrap(updatedPass, `Pass with ID ${passId} not found or failed to update`);
   }
 
   async getPassStatistics(schoolId: string, dateRange?: { from: Date; to: Date }) {
