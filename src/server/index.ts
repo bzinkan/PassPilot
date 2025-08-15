@@ -10,6 +10,7 @@ import { adminRouter } from './routes/admin';
 import { passesRouter } from './routes/passes';
 import { reportsRouter } from './routes/reports';
 import { profileRouter } from './routes/profile';
+import { uploadRouter } from './routes/upload';
 import { gradesRouter } from './routes/grades';
 import { studentsRouter } from './routes/students';
 import { kioskRouter } from './routes/kiosk';
@@ -32,6 +33,7 @@ app.use(cookies(process.env.SESSION_SECRET!));
 // API routes only - removed pagesRouter to let Vite handle the frontend
 app.use('/api/auth', authRouter);
 app.use('/api/profile', profileRouter);
+app.use('/api/upload', uploadRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api/passes', passesRouter);
 app.use('/api/reports', reportsRouter);

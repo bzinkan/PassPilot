@@ -3,7 +3,7 @@ import { asyncHandler } from '../middleware/asyncHandler';
 import { requireAuth, requireRole } from '../middleware/auth';
 import { requireTenant } from '../middleware/tenant';
 import { db } from '../db/client';
-import { users, audits } from '@shared/schema';
+import { users, audits, schools } from '@shared/schema';
 import { and, count, eq } from 'drizzle-orm';
 import { createInvite } from '../services/registration';
 import { createSchool } from '../services/schools';
@@ -12,6 +12,45 @@ import bcrypt from 'bcryptjs';
 
 export const adminRouter = Router();
 adminRouter.use(requireAuth, requireRole('admin'));
+
+// School admin overview - KPI cards and quick actions
+adminRouter.get('/overview', asyncHandler(async (req, res) => {
+  const { schoolId } = (req as any).session;
+  
+  // Get counts for KPI cards
+  const [usersCount] = await db.select({ count: count() }).from(users).where(eq(users.schoolId, schoolId));
+  const [activePassesCount] = await db.select({ count: count() }).from(audits).where(
+    and(eq(audits.schoolId, schoolId), eq(audits.action, 'pass_created'))
+  );
+  
+  res.json({ 
+    ok: true, 
+    data: {
+      totalUsers: usersCount.count || 0,
+      activePasses: activePassesCount.count || 0,
+      schoolId: schoolId
+    }
+  });
+}));
+
+// School settings management
+adminRouter.get('/settings', asyncHandler(async (req, res) => {
+  const { schoolId } = (req as any).session;
+  const [school] = await db.select().from(schools).where(eq(schools.id, schoolId));
+  res.json({ ok: true, data: school });
+}));
+
+adminRouter.patch('/settings', asyncHandler(async (req, res) => {
+  const { schoolId } = (req as any).session;
+  const { name, seatsAllowed } = req.body ?? {};
+  
+  const [school] = await db.update(schools)
+    .set({ name, seatsAllowed })
+    .where(eq(schools.id, schoolId))
+    .returning();
+    
+  res.json({ ok: true, data: school });
+}));
 
 // Original superadmin-only routes for school management
 adminRouter.post('/schools', asyncHandler(async (req, res) => {
