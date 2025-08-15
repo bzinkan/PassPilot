@@ -15,7 +15,7 @@ export default function Landing() {
   const { toast } = useToast();
 
   const loginMutation = useMutation({
-    mutationFn: () => apiRequest("POST", "/auth/login", { email, password, schoolId: Number(schoolId) }),
+    mutationFn: () => apiRequest("POST", "/api/auth/login", { email, password, schoolId: Number(schoolId) }),
     onSuccess: () => {
       window.location.reload();
     },

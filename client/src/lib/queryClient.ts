@@ -1,5 +1,5 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
-import { ApiResponse, isApiSuccess, handleApiResponse } from "@shared/api";
+import { ApiResponse, isApiSuccess, handleApiResponse } from "../../../shared/api";
 
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
