@@ -19,24 +19,42 @@ import { createInvite } from '../services/registration';
 
 export const saRouter = Router();
 
-// Demo setup endpoint - creates demo data without authentication
-saRouter.post('/demo-setup', asyncHandler(async (req: Request, res: Response) => {
+// Quick setup endpoint - creates your account
+saRouter.post('/quick-setup', asyncHandler(async (req: Request, res: Response) => {
   try {
-    // Create demo school
-    const [school] = await db.insert(schools).values({
-      name: 'Riverside Elementary Demo',
-      seatsAllowed: 500,
-      active: true
-    }).returning();
+    // Get first available school or create one
+    let [school] = await db.select().from(schools).limit(1);
+    if (!school) {
+      [school] = await db.insert(schools).values({
+        name: 'Demo School',
+        seatsAllowed: 500,
+        active: true
+      }).returning();
+    }
 
-    // Create demo admin user
+    // Check if user exists
+    const [existingUser] = await db.select().from(users).where(eq(users.email, 'passpilotapp@gmail.com'));
+    
+    if (existingUser) {
+      res.json({ 
+        ok: true, 
+        data: { 
+          school: school.name, 
+          schoolId: school.id,
+          admin: existingUser.email,
+          message: 'Account already exists! Use School ID: ' + school.id
+        } 
+      });
+      return;
+    }
+
+    // Create your user account
     const passwordHash = await bcrypt.hash('demo123', 10);
     const [admin] = await db.insert(users).values({
-      email: 'admin@demo.com',
+      email: 'passpilotapp@gmail.com',
       passwordHash,
-      role: 'admin',
+      role: 'superadmin',
       schoolId: school.id,
-      displayName: 'Demo Admin',
       active: true
     }).returning();
 
@@ -44,8 +62,9 @@ saRouter.post('/demo-setup', asyncHandler(async (req: Request, res: Response) =>
       ok: true, 
       data: { 
         school: school.name, 
+        schoolId: school.id,
         admin: admin.email,
-        message: 'Demo environment created successfully!' 
+        message: 'Account created! Use School ID: ' + school.id
       } 
     });
   } catch (error: any) {

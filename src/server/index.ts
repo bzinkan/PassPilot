@@ -45,6 +45,53 @@ app.use('/api/roster', rosterRouter);
 app.use('/api/myclass', myClassRouter);
 app.use('/api/sa', saRouter);
 
+// Quick setup for demo - unprotected endpoint
+app.post('/api/create-demo-user', async (req, res) => {
+  try {
+    const { db } = await import('./db/client.js');
+    const { schools, users } = await import('../shared/schema.js');
+    const bcrypt = await import('bcryptjs');
+    
+    // Get or create school
+    let [school] = await db.select().from(schools).limit(1);
+    if (!school) {
+      [school] = await db.insert(schools).values({
+        name: 'Demo School',
+        seatsAllowed: 500,
+        active: true
+      }).returning();
+    }
+
+    // Check if user exists
+    const { eq } = await import('drizzle-orm');
+    const [existingUser] = await db.select().from(users).where(eq(users.email, 'passpilotapp@gmail.com'));
+    
+    if (existingUser) {
+      return res.json({ 
+        schoolId: school.id,
+        message: `Account exists! Use School ID: ${school.id}` 
+      });
+    }
+
+    // Create user
+    const passwordHash = await bcrypt.hash('demo123', 10);
+    const [user] = await db.insert(users).values({
+      email: 'passpilotapp@gmail.com',
+      passwordHash,
+      role: 'superadmin',
+      schoolId: school.id,
+      active: true
+    }).returning();
+
+    res.json({ 
+      schoolId: school.id,
+      message: `Account created! Use School ID: ${school.id}` 
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Setup Vite for serving the React app
 setupVite(app, server).then(() => {
   app.use(notFound);
