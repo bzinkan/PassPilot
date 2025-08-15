@@ -185,4 +185,27 @@
     background-color: var(--pilot-glass);
     border: 1px solid hsl(220, 50%, 90%, 0.18);
   }
+  
+  /* Text Colors */
+  .text-pilot-blue { color: var(--pilot-blue); }
+  .text-pilot-blue-dark { color: var(--pilot-blue-dark); }
+  .text-pilot-success { color: var(--pilot-success); }
+  .text-pilot-warning { color: var(--pilot-warning); }
+  .text-pilot-danger { color: var(--pilot-danger); }
+  
+  /* Border Colors */
+  .border-pilot-blue-100 { border-color: var(--pilot-blue-100); }
+  .border-pilot-blue-200 { border-color: hsl(217, 91%, 85%); }
+  
+  /* Additional Background Colors */
+  .bg-pilot-blue-200 { background-color: hsl(217, 91%, 85%); }
+  
+  /* Hover States */
+  .hover\:bg-pilot-blue-dark:hover { background-color: var(--pilot-blue-dark); }
+  .hover\:bg-pilot-blue-200:hover { background-color: hsl(217, 91%, 85%); }
+  
+  /* Background with gradients */
+  .bg-pilot-background {
+    background: linear-gradient(135deg, var(--pilot-background) 0%, hsl(217, 50%, 96%) 100%);
+  }
 }
