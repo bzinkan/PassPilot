@@ -1,3 +1,6 @@
+// Validate environment variables first - fail fast if anything is missing
+import "./env";
+
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";

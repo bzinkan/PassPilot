@@ -32,6 +32,15 @@ Preferred communication style: Simple, everyday language.
 - Fixed all storage methods to properly handle undefined returns
 - Added explicit Promise<void> return types for Express route handlers
 
+### Environment Validation System
+- Created server/env.ts with Zod schema validation for all environment variables
+- Validates required variables: DATABASE_URL, SESSION_SECRET, REPL_ID, REPLIT_DOMAINS
+- Checks SESSION_SECRET minimum length (32 characters) for security
+- Validates DATABASE_URL format and PostgreSQL connection details
+- Fails fast at startup with clear error messages if any variables are missing
+- Includes helper functions for auth and database environment configuration
+- Prevents deployment issues by catching configuration problems early
+
 ## System Architecture
 
 ### Frontend Architecture

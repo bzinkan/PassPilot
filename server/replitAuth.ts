@@ -7,16 +7,14 @@ import type { Express, RequestHandler } from "express";
 import memoize from "memoizee";
 import connectPg from "connect-pg-simple";
 import { storage } from "./storage";
-
-if (!process.env.REPLIT_DOMAINS) {
-  throw new Error("Environment variable REPLIT_DOMAINS not provided");
-}
+import { ENV, getAuthEnvironment } from "./env";
 
 const getOidcConfig = memoize(
   async () => {
+    const authEnv = getAuthEnvironment();
     return await client.discovery(
-      new URL(process.env.ISSUER_URL ?? "https://replit.com/oidc"),
-      process.env.REPL_ID!
+      new URL(authEnv.issuerUrl),
+      authEnv.replId
     );
   },
   { maxAge: 3600 * 1000 }
@@ -26,13 +24,14 @@ export function getSession() {
   const sessionTtl = 7 * 24 * 60 * 60 * 1000; // 1 week
   const pgStore = connectPg(session);
   const sessionStore = new pgStore({
-    conString: process.env.DATABASE_URL,
+    conString: ENV.DATABASE_URL,
     createTableIfMissing: false,
     ttl: sessionTtl,
     tableName: "sessions",
   });
+  const authEnv = getAuthEnvironment();
   return session({
-    secret: process.env.SESSION_SECRET!,
+    secret: authEnv.sessionSecret,
     store: sessionStore,
     resave: false,
     saveUninitialized: false,
@@ -84,8 +83,8 @@ export async function setupAuth(app: Express) {
     verified(null, user);
   };
 
-  for (const domain of process.env
-    .REPLIT_DOMAINS!.split(",")) {
+  const authEnv = getAuthEnvironment();
+  for (const domain of authEnv.replitDomains.split(",")) {
     const strategy = new Strategy(
       {
         name: `replitauth:${domain}`,
@@ -117,9 +116,10 @@ export async function setupAuth(app: Express) {
 
   app.get("/api/logout", (req, res) => {
     req.logout(() => {
+      const authEnv = getAuthEnvironment();
       res.redirect(
         client.buildEndSessionUrl(config, {
-          client_id: process.env.REPL_ID!,
+          client_id: authEnv.replId,
           post_logout_redirect_uri: `${req.protocol}://${req.hostname}`,
         }).href
       );
