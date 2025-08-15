@@ -1,0 +1,96 @@
+// === Profile: schema patch + routes (paste & run) ===
+// 1) PATCH SCHEMA (src/server/db/schema.ts)
+//    - Add displayName to users
+//    - Add user_settings table
+// After editing, run: npm run db:generate && npm run db:migrate
+
+/* --- schema.ts additions --- */
+// In your existing users table, add this column:
+//   displayName: varchar('display_name', { length: 120 }),
+
+// Then add this new table (below other tables):
+import { pgTable, integer, varchar } from 'drizzle-orm/pg-core';
+export const userSettings = pgTable('user_settings', {
+  userId: integer('user_id').primaryKey().references(() => users.id),
+  lastActiveGradeId: integer('last_active_grade_id'), // optional helper for MyClass
+  defaultPassType: varchar('default_pass_type', { length: 20 }).default('general'),
+  theme: varchar('theme', { length: 20 }).default('light')
+});
+
+/* --- END schema.ts additions --- */
+
+// 2) ROUTES (create file: src/server/routes/profile.ts)
+import { Router } from 'express';
+import { asyncHandler } from '../middleware/asyncHandler';
+import { requireAuth } from '../middleware/auth';
+import { db } from '../db/client';
+import { users, userSettings } from '../db/schema';
+import { eq } from 'drizzle-orm';
+import bcrypt from 'bcryptjs';
+
+export const profileRouter = Router();
+profileRouter.use(requireAuth);
+
+// GET /profile -> basic info + settings
+profileRouter.get('/profile', asyncHandler(async (req, res) => {
+  const { userId } = (req as any).user as { userId: number };
+  const [u] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+  const [s] = await db.select().from(userSettings).where(eq(userSettings.userId, userId)).limit(1);
+  if (!u) return res.status(404).json({ error: 'User not found' });
+  res.json({
+    id: u.id,
+    email: u.email,
+    role: u.role,
+    schoolId: u.schoolId,
+    displayName: u.displayName ?? null,
+    settings: s ?? null
+  });
+}));
+
+// PUT /profile { displayName?, theme?, defaultPassType? }
+profileRouter.put('/profile', asyncHandler(async (req, res) => {
+  const { userId } = (req as any).user as { userId: number };
+  const { displayName, theme, defaultPassType } = req.body ?? {};
+
+  if (displayName !== undefined) {
+    await db.update(users).set({ displayName: String(displayName) }).where(eq(users.id, userId));
+  }
+
+  if (theme !== undefined || defaultPassType !== undefined) {
+    // upsert settings row
+    await db.insert(userSettings).values({
+      userId,
+      theme: theme ? String(theme) : undefined,
+      defaultPassType: defaultPassType ? String(defaultPassType) : undefined
+    } as any).onConflictDoUpdate({
+      target: userSettings.userId,
+      set: {
+        theme: theme ? String(theme) : undefined,
+        defaultPassType: defaultPassType ? String(defaultPassType) : undefined
+      }
+    });
+  }
+
+  res.json({ ok: true });
+}));
+
+// PUT /profile/password { currentPassword, newPassword }
+profileRouter.put('/profile/password', asyncHandler(async (req, res) => {
+  const { userId } = (req as any).user as { userId: number };
+  const { currentPassword, newPassword } = req.body ?? {};
+  if (!currentPassword || !newPassword) return res.status(400).json({ error: 'Missing currentPassword/newPassword' });
+
+  const [u] = await db.select({ id: users.id, passwordHash: users.passwordHash }).from(users).where(eq(users.id, userId)).limit(1);
+  if (!u) return res.status(404).json({ error: 'User not found' });
+
+  const ok = await bcrypt.compare(String(currentPassword), u.passwordHash);
+  if (!ok) return res.status(400).json({ error: 'Current password incorrect' });
+
+  const newHash = await bcrypt.hash(String(newPassword), 10);
+  await db.update(users).set({ passwordHash: newHash }).where(eq(users.id, userId));
+  res.json({ ok: true });
+}));
+
+// 3) MOUNT (in src/server/index.ts)
+// import { profileRouter } from './routes/profile';
+// app.use('/', profileRouter);

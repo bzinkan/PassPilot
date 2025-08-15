@@ -17,6 +17,7 @@ export const users = pgTable('users', {
   passwordHash: varchar('password_hash', { length: 255 }).notNull(),
   role: varchar('role', { length: 20 }).notNull(),
   schoolId: integer('school_id').references(() => schools.id).notNull(),
+  displayName: varchar('display_name', { length: 120 }),
   active: boolean('active').notNull().default(true),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull()
 });
@@ -84,6 +85,13 @@ export const audits = pgTable('audits', {
   targetId: integer('target_id'),
   data: text('data'),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull()
+});
+
+export const userSettings = pgTable('user_settings', {
+  userId: integer('user_id').primaryKey().references(() => users.id),
+  lastActiveGradeId: integer('last_active_grade_id'),
+  defaultPassType: varchar('default_pass_type', { length: 20 }).default('general'),
+  theme: varchar('theme', { length: 20 }).default('light')
 });
 
 // Relations

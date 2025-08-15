@@ -8,6 +8,7 @@ import { authRouter } from './routes/auth';
 import { adminRouter } from './routes/admin';
 import { passesRouter } from './routes/passes';
 import { reportsRouter } from './routes/reports';
+import { profileRouter } from './routes/profile';
 import { gradesRouter } from './routes/grades';
 import { studentsRouter } from './routes/students';
 import { kioskRouter } from './routes/kiosk';
@@ -24,6 +25,7 @@ app.use(cookies(process.env.SESSION_SECRET!));
 // Core routes
 app.use('/', authRouter);
 app.use('/', pagesRouter);
+app.use('/', profileRouter);
 app.use('/admin', adminRouter);
 app.use('/passes', passesRouter);
 app.use('/reports', reportsRouter);
