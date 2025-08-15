@@ -97,13 +97,27 @@ export const userSettings = pgTable('user_settings', {
   theme: varchar('theme', { length: 20 }).default('light')
 });
 
+// Registration tokens table for secure user invitation flow
+export const registrationTokens = pgTable('registration_tokens', {
+  id: serial('id').primaryKey(),
+  email: varchar('email', { length: 255 }).notNull(),
+  schoolId: integer('school_id').references(() => schools.id).notNull(),
+  role: varchar('role', { length: 20 }).notNull(),
+  codeHash: varchar('code_hash', { length: 255 }).notNull(),
+  createdByUserId: integer('created_by_user_id').references(() => users.id).notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+  usedAt: timestamp('used_at', { withTimezone: true })
+});
+
 // Relations
 export const schoolsRelations = relations(schools, ({ many }) => ({
   users: many(users),
   grades: many(grades),
   students: many(students),
   kioskDevices: many(kioskDevices),
-  passes: many(passes)
+  passes: many(passes),
+  registrationTokens: many(registrationTokens)
 }));
 
 export const usersRelations = relations(users, ({ one, many }) => ({
@@ -132,4 +146,9 @@ export const teacherGradeMapRelations = relations(teacherGradeMap, ({ one }) => 
   user: one(users, { fields: [teacherGradeMap.userId], references: [users.id] }),
   school: one(schools, { fields: [teacherGradeMap.schoolId], references: [schools.id] }),
   grade: one(grades, { fields: [teacherGradeMap.gradeId], references: [grades.id] })
+}));
+
+export const registrationTokensRelations = relations(registrationTokens, ({ one }) => ({
+  school: one(schools, { fields: [registrationTokens.schoolId], references: [schools.id] }),
+  createdBy: one(users, { fields: [registrationTokens.createdByUserId], references: [users.id] })
 }));

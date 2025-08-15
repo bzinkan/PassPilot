@@ -1,21 +1,8 @@
 import crypto from 'crypto';
+import bcrypt from 'bcryptjs';
 import { db } from '../db/client';
-import { users } from '@shared/schema';
-import { eq } from 'drizzle-orm';
-
-// Simplified invite token storage (in production, use a proper tokens table)
-interface InviteToken {
-  id: string;
-  email: string;
-  role: 'teacher' | 'admin';
-  schoolId: number;
-  createdByUserId: number;
-  expiresAt: Date;
-  used: boolean;
-}
-
-// In-memory token storage (replace with database table in production)
-const inviteTokens = new Map<string, InviteToken>();
+import { users, registrationTokens } from '@shared/schema';
+import { eq, and, isNull, gt } from 'drizzle-orm';
 
 export interface CreateInviteOptions {
   email: string;
@@ -25,27 +12,32 @@ export interface CreateInviteOptions {
   expiresInMinutes?: number;
 }
 
-export function createInvite(options: CreateInviteOptions) {
-  const tokenId = crypto.randomUUID();
-  const code = crypto.randomBytes(16).toString('hex').toUpperCase();
+export async function createInvite(options: CreateInviteOptions) {
+  const code = crypto.randomBytes(3).toString('hex').toUpperCase(); // 6 char code
+  const codeHash = await bcrypt.hash(code, 10);
   const expiresAt = new Date(Date.now() + (options.expiresInMinutes || 1440) * 60 * 1000);
   
-  const token: InviteToken = {
-    id: tokenId,
+  const [token] = await db.insert(registrationTokens).values({
     email: options.email.toLowerCase(),
-    role: options.role,
     schoolId: options.schoolId,
+    role: options.role,
+    codeHash,
     createdByUserId: options.createdByUserId,
-    expiresAt,
-    used: false
-  };
-  
-  inviteTokens.set(tokenId, token);
+    expiresAt
+  }).returning();
   
   return {
     token,
     code
   };
+}
+
+export async function verifyCode(code: string, codeHash: string): Promise<boolean> {
+  try {
+    return await bcrypt.compare(code, codeHash);
+  } catch {
+    return false;
+  }
 }
 
 export function getInviteToken(tokenId: string): InviteToken | null {

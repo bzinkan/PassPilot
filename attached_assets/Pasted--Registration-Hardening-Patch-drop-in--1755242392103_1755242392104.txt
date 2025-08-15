@@ -1,0 +1,157 @@
+// ==========================================
+// Registration Hardening Patch (drop-in)
+// ==========================================
+// What this adds:
+// 1) Unique active invite per (email, school)
+// 2) Safer /activate: ignores client schoolId, race-safe token consumption
+// 3) Light per-email rate limit for /activate
+// 4) (Optional) startup cleanup of stale invites
+//
+// Apply in this order:
+//  A. Create the unique index (SQL below)
+//  B. Replace your /activate handler with the one here
+//  C. Update admin invite route to gracefully handle duplicates
+//  D. (Optional) add startup cleanup snippet
+//
+// Then: `npm run db:generate && npm run db:migrate` (if you changed schema)
+// and restart the server.
+
+/* -----------------------------------------
+ * A) SQL: allow only one ACTIVE invite per email+school
+ * Run once against your DB (Neon) — you can use drizzle db.execute.
+ * ---------------------------------------*/
+/* SQL
+CREATE UNIQUE INDEX IF NOT EXISTS uniq_active_invite_per_email_school
+ON registration_tokens(email, school_id)
+WHERE used_at IS NULL AND expires_at > now();
+*/
+
+/* -----------------------------------------
+ * B) Hardened /activate handler (public.ts)
+ *  - Ignores client-provided schoolId
+ *  - Verifies code, enforces pw strength
+ *  - Race-safe "use once" token consumption
+ *  - Per-email rate limiting (basic)
+ * ---------------------------------------*/
+import { Router } from 'express';
+import { asyncHandler } from '../middleware/asyncHandler';
+import { db } from '../db/client';
+import { registrationTokens, users } from '../db/schema';
+import { and, eq, gt, isNull } from 'drizzle-orm';
+import bcrypt from 'bcryptjs';
+import { setSession } from '../middleware/auth';
+import { verifyCode } from '../services/registration';
+
+// Basic in-memory per-email limiter for /activate (resets every windowMs)
+const emailBuckets = new Map<string, { count: number; resetAt: number }>();
+function rateLimitPerEmail(windowMs = 60_000, max = 8) {
+  return (email: string) => {
+    const key = email.toLowerCase();
+    const now = Date.now();
+    const b = emailBuckets.get(key);
+    if (!b || now > b.resetAt) {
+      emailBuckets.set(key, { count: 1, resetAt: now + windowMs });
+      return true;
+    }
+    if (b.count >= max) return false;
+    b.count++;
+    return true;
+  };
+}
+const allowActivate = rateLimitPerEmail(60_000, 12); // 12 attempts/min/email
+
+export const hardenedActivateRoute = (publicRouter: Router) => {
+  publicRouter.post('/activate', asyncHandler(async (req, res) => {
+    const emailLower = String(req.body?.email || '').toLowerCase().trim();
+    const code = String(req.body?.code || '').toUpperCase().trim();
+    const password = String(req.body?.password || '');
+
+    if (!emailLower || !code || !password) return res.status(400).json({ error: 'Missing fields' });
+    if (!allowActivate(emailLower)) return res.status(429).json({ error: 'Too many attempts' });
+    if (password.length < 10) return res.status(400).json({ error: 'weak_password' });
+
+    const now = new Date();
+    // Find an active token for this email (ignore client schoolId)
+    const [tok] = await db.select().from(registrationTokens).where(and(
+      eq(registrationTokens.email, emailLower),
+      isNull(registrationTokens.usedAt),
+      gt(registrationTokens.expiresAt, now)
+    )).limit(1);
+    if (!tok) return res.status(410).json({ error: 'invalid_or_expired' });
+
+    const ok = await verifyCode(code, tok.codeHash);
+    if (!ok) return res.status(410).json({ error: 'invalid_or_expired' });
+
+    // Prevent duplicate user in the invited school
+    const [exists] = await db.select({ id: users.id }).from(users)
+      .where(and(eq(users.email, emailLower), eq(users.schoolId, tok.schoolId)))
+      .limit(1);
+    if (exists) return res.status(409).json({ error: 'already_exists' });
+
+    // Race-safe consume: set usedAt only if still null
+    const used = await db.update(registrationTokens)
+      .set({ usedAt: now })
+      .where(and(eq(registrationTokens.id, tok.id), isNull(registrationTokens.usedAt)))
+      .returning();
+    if (!used.length) return res.status(410).json({ error: 'invalid_or_expired' });
+
+    const passwordHash = await bcrypt.hash(password, 10);
+    const [u] = await db.insert(users).values({
+      email: emailLower,
+      passwordHash,
+      role: tok.role as any,
+      schoolId: tok.schoolId, // from token, not req
+      active: true
+    }).returning();
+
+    setSession(res, { userId: u.id, schoolId: u.schoolId, role: u.role as any, iat: Date.now() });
+    res.json({ ok: true });
+  }));
+};
+
+/* -------------------------------------------------------
+ * C) Admin invites: handle duplicate active invite gracefully
+ *    File: src/server/routes/admin.ts (inside adminRouter)
+ * -----------------------------------------------------*/
+import { registrationTokens as rt } from '../db/schema';
+import { createInvite } from '../services/registration';
+
+export async function inviteOrReturnExisting({ email, role, schoolId, createdByUserId }: { email: string; role: 'teacher'|'admin'; schoolId: number; createdByUserId: number; }) {
+  // Try create; on unique violation, return existing active invite
+  try {
+    return await createInvite({ email, role, schoolId, createdByUserId, expiresInMinutes: 1440 });
+  } catch (e: any) {
+    if (e?.code !== '23505') throw e; // not unique violation
+    const now = new Date();
+    const [existing] = await db.select().from(rt).where(and(
+      eq(rt.email, email.toLowerCase()),
+      eq(rt.schoolId, schoolId),
+      isNull(rt.usedAt),
+      gt(rt.expiresAt, now)
+    )).limit(1);
+    if (!existing) throw e;
+    return { token: existing, code: 'SENT_PREVIOUSLY' } as const;
+  }
+}
+
+// Example route (replace your /users/invite handler body with this call):
+/*
+adminRouter.post('/users/invite', requireTenant, asyncHandler(async (req, res) => {
+  const { email, role } = req.body ?? {};
+  const { schoolId, userId } = (req as any).user;
+  if (!email || !['teacher','admin'].includes(String(role))) return res.status(400).json({ error: 'email+role required' });
+
+  const { token, code } = await inviteOrReturnExisting({ email: String(email), role: role as any, schoolId, createdByUserId: userId });
+  const activationUrl = `/activate?schoolId=${schoolId}&email=${encodeURIComponent(String(email).toLowerCase())}`;
+  res.json({ ok: true, activationUrl, code, expiresAt: token.expiresAt });
+}));
+*/
+
+/* -----------------------------------------
+ * D) (Optional) Startup cleanup of old invites
+ *    File: src/server/index.ts (before app.listen)
+ * ---------------------------------------*/
+/*
+import { db } from './db/client';
+await db.execute("DELETE FROM registration_tokens WHERE expires_at < now() - interval '7 days'");
+*/
