@@ -11,6 +11,8 @@ export async function createPass(params: {
   customReason?: string;
   issuedByUserId: number;
   schoolId: number;
+  issuedVia?: string;
+  kioskDeviceId?: number;
 }) {
   let finalStudentName = params.studentName;
   
@@ -55,7 +57,9 @@ export async function createPass(params: {
       type: params.type || 'general',
       customReason: params.customReason,
       issuedByUserId: params.issuedByUserId,
-      schoolId: params.schoolId
+      schoolId: params.schoolId,
+      issuedVia: params.issuedVia || 'general',
+      kioskDeviceId: params.kioskDeviceId
     }).returning();
     return row;
   } catch (error: any) {

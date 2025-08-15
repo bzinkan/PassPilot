@@ -1,0 +1,123 @@
+// ================================
+// Kiosk middleware + auth routes
+// ================================
+// Files to create:
+// 1) src/server/middleware/kiosk.ts
+// 2) src/server/routes/kiosk_auth.ts
+// Then mount in index.ts and (optionally) tweak kiosk passes routes (see bottom).
+
+/* ---------------------------------
+ * 1) src/server/middleware/kiosk.ts
+ * --------------------------------*/
+import type { Request, Response, NextFunction } from 'express';
+import cookie from 'cookie';
+import crypto from 'crypto';
+
+const KIOSK_COOKIE = 'pp_kiosk';
+const ALGO = 'sha256';
+
+function sign(val: string, secret: string) {
+  const sig = crypto.createHmac(ALGO, secret).update(val).digest('base64url');
+  return `${val}.${sig}`;
+}
+function verify(signed: string, secret: string) {
+  const [v, sig] = signed.split('.');
+  if (!v || !sig) return null;
+  const expect = crypto.createHmac(ALGO, secret).update(v).digest('base64url');
+  return crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expect)) ? v : null;
+}
+
+export type KioskSession = { schoolId: number; room: string; kioskDeviceId?: number };
+
+export function setKioskSession(res: Response, sess: KioskSession) {
+  const secret = process.env.SESSION_SECRET!;
+  const value = Buffer.from(JSON.stringify(sess)).toString('base64url');
+  res.setHeader('Set-Cookie', cookie.serialize(KIOSK_COOKIE, sign(value, secret), {
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: 'auto',
+    path: '/',
+    maxAge: 60 * 60 * 8 // 8h
+  }));
+}
+
+export function clearKioskSession(res: Response) {
+  res.setHeader('Set-Cookie', cookie.serialize(KIOSK_COOKIE, '', {
+    httpOnly: true, sameSite: 'lax', secure: 'auto', path: '/', maxAge: 0
+  }));
+}
+
+export function readKioskSession(req: Request): KioskSession | null {
+  const secret = process.env.SESSION_SECRET!;
+  const rawCookie = (req.headers.cookie || '').split('; ').find(c => c.startsWith(KIOSK_COOKIE + '='));
+  if (!rawCookie) return null;
+  const signed = rawCookie.split('=')[1];
+  const v = verify(signed, secret);
+  if (!v) return null;
+  try { return JSON.parse(Buffer.from(v, 'base64url').toString('utf8')) as KioskSession; }
+  catch { return null; }
+}
+
+export function requireKiosk(req: Request, res: Response, next: NextFunction) {
+  const s = readKioskSession(req);
+  if (!s) return res.status(401).json({ error: 'Kiosk unauthorized' });
+  (req as any).kiosk = s;
+  next();
+}
+
+/* -------------------------------
+ * 2) src/server/routes/kiosk_auth.ts
+ * -------------------------------*/
+import { Router } from 'express';
+import { asyncHandler } from '../middleware/asyncHandler';
+import { db } from '../db/client';
+import { kioskDevices } from '../db/schema';
+import { eq, and } from 'drizzle-orm';
+import bcrypt from 'bcryptjs';
+import { setKioskSession, clearKioskSession, requireKiosk } from '../middleware/kiosk';
+
+export const kioskAuthRouter = Router();
+
+// POST /kiosk/login { schoolId, room, pin }
+kioskAuthRouter.post('/kiosk/login', asyncHandler(async (req, res) => {
+  const { schoolId, room, pin } = req.body ?? {};
+  if (!schoolId || !room || !pin) return res.status(400).json({ error: 'Missing fields' });
+
+  const [dev] = await db.select().from(kioskDevices)
+    .where(and(
+      eq(kioskDevices.schoolId, Number(schoolId)),
+      eq(kioskDevices.room, String(room)),
+      eq(kioskDevices.active, true)
+    ))
+    .limit(1);
+  if (!dev) return res.status(401).json({ error: 'Invalid room or inactive device' });
+
+  const ok = await bcrypt.compare(String(pin), dev.pinHash);
+  if (!ok) return res.status(401).json({ error: 'Invalid PIN' });
+
+  setKioskSession(res, { schoolId: Number(schoolId), room: String(room), kioskDeviceId: dev.id });
+  res.json({ ok: true });
+}));
+
+// POST /kiosk/logout
+kioskAuthRouter.post('/kiosk/logout', requireKiosk, asyncHandler(async (_req, res) => {
+  clearKioskSession(res);
+  res.json({ ok: true });
+}));
+
+/* --------------------------------------------------
+ * 3) (Optional) Patch your existing kiosk pass routes
+ *    File: src/server/routes/kiosk.ts
+ *    - Require kiosk session
+ *    - Set issuedVia + kioskDeviceId
+ * ------------------------------------------------*/
+// import { requireKiosk } from '../middleware/kiosk';
+// kioskRouter.use(requireKiosk);
+// ... inside POST /kiosk/passes insertion values add:
+//   issuedVia: 'kiosk', kioskDeviceId: (req as any).kiosk?.kioskDeviceId,
+
+/* ------------------
+ * 4) index.ts mounts
+ * ------------------*/
+// import { kioskAuthRouter } from './routes/kiosk_auth';
+// app.use('/', kioskAuthRouter);

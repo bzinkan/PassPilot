@@ -12,6 +12,7 @@ import { profileRouter } from './routes/profile';
 import { gradesRouter } from './routes/grades';
 import { studentsRouter } from './routes/students';
 import { kioskRouter } from './routes/kiosk';
+import { kioskAuthRouter } from './routes/kiosk_auth';
 import { rosterRouter, myClassRouter } from './routes/roster';
 import { pagesRouter } from './routes/pages';
 
@@ -32,6 +33,7 @@ app.use('/reports', reportsRouter);
 app.use('/grades', gradesRouter);
 app.use('/students', studentsRouter);
 app.use('/kiosk', kioskRouter);
+app.use('/', kioskAuthRouter);
 app.use('/', rosterRouter);
 app.use('/', myClassRouter);
 

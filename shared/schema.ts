@@ -72,6 +72,9 @@ export const passes = pgTable('passes', {
   issuedByUserId: integer('issued_by_user_id').references(() => users.id).notNull(),
   schoolId: integer('school_id').references(() => schools.id).notNull(),
   status: varchar('status', { length: 20 }).notNull().default('active'),
+  // Kiosk integration fields
+  issuedVia: varchar('issued_via', { length: 20 }).default('general'), // 'general'|'kiosk'
+  kioskDeviceId: integer('kiosk_device_id').references(() => kioskDevices.id),
   startsAt: timestamp('starts_at', { withTimezone: true }).defaultNow().notNull(),
   endsAt: timestamp('ends_at', { withTimezone: true }),
 });

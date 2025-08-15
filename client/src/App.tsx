@@ -6,6 +6,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { useAuth } from "@/hooks/useAuth";
 import Landing from "@/pages/Landing";
 import Dashboard from "@/pages/Dashboard";
+import KioskLogin from "@/pages/KioskLogin";
+import KioskDashboard from "@/pages/KioskDashboard";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -13,6 +15,11 @@ function Router() {
 
   return (
     <Switch>
+      {/* Kiosk routes - no authentication needed */}
+      <Route path="/kiosk/login" component={KioskLogin} />
+      <Route path="/kiosk/dashboard" component={KioskDashboard} />
+      
+      {/* Main app routes */}
       {isLoading || !isAuthenticated ? (
         <Route path="/" component={Landing} />
       ) : (
