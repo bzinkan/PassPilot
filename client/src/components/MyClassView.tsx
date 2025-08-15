@@ -27,39 +27,45 @@ export default function MyClassView() {
   return (
     <div className="space-y-6">
       {/* Quick Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Card className="bg-white/80 backdrop-blur-sm border-pilot-blue-100 shadow-pilot hover:shadow-pilot-xl transition-all duration-200">
           <CardContent className="flex items-center space-x-4 p-6">
-            <Users className="h-8 w-8 text-blue-600" />
+            <div className="bg-pilot-blue-100 p-3 rounded-xl">
+              <Users className="h-8 w-8 text-pilot-blue" />
+            </div>
             <div>
-              <p className="text-2xl font-bold" data-testid="text-total-students">
+              <p className="text-2xl font-bold text-pilot-blue-dark" data-testid="text-total-students">
                 {stats.totalStudents || 0}
               </p>
-              <p className="text-sm text-gray-600">Total Students</p>
+              <p className="text-sm text-pilot-blue/70">Total Students</p>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-white/80 backdrop-blur-sm border-pilot-blue-100 shadow-pilot hover:shadow-pilot-xl transition-all duration-200">
           <CardContent className="flex items-center space-x-4 p-6">
-            <UserCheck className="h-8 w-8 text-green-600" />
+            <div className="bg-pilot-success/10 p-3 rounded-xl">
+              <UserCheck className="h-8 w-8 text-pilot-success" />
+            </div>
             <div>
-              <p className="text-2xl font-bold" data-testid="text-students-present">
+              <p className="text-2xl font-bold text-pilot-success" data-testid="text-students-present">
                 {stats.availableStudents || 0}
               </p>
-              <p className="text-sm text-gray-600">Students Present</p>
+              <p className="text-sm text-pilot-blue/70">Students Present</p>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-white/80 backdrop-blur-sm border-pilot-blue-100 shadow-pilot hover:shadow-pilot-xl transition-all duration-200">
           <CardContent className="flex items-center space-x-4 p-6">
-            <Clock className="h-8 w-8 text-orange-600" />
+            <div className="bg-pilot-warning/10 p-3 rounded-xl">
+              <Clock className="h-8 w-8 text-pilot-warning" />
+            </div>
             <div>
-              <p className="text-2xl font-bold" data-testid="text-students-out">
+              <p className="text-2xl font-bold text-pilot-warning" data-testid="text-students-out">
                 {stats.studentsOut || 0}
               </p>
-              <p className="text-sm text-gray-600">Students Out</p>
+              <p className="text-sm text-pilot-blue/70">Students Out</p>
             </div>
           </CardContent>
         </Card>

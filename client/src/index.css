@@ -3,59 +3,69 @@
 @tailwind utilities;
 
 :root {
-  --background: hsl(0, 0%, 100%);
-  --foreground: hsl(210, 25%, 7.8431%);
-  --card: hsl(180, 6.6667%, 97.0588%);
-  --card-foreground: hsl(210, 25%, 7.8431%);
-  --popover: hsl(0, 0%, 100%);
-  --popover-foreground: hsl(210, 25%, 7.8431%);
-  --primary: hsl(203.8863, 88.2845%, 53.1373%);
+  /* Beautiful Bluish Theme - PassPilot */
+  --background: hsl(220, 50%, 98%);
+  --foreground: hsl(215, 28%, 17%);
+  --card: hsl(220, 50%, 97%);
+  --card-foreground: hsl(215, 25%, 27%);
+  --popover: hsl(220, 50%, 99%);
+  --popover-foreground: hsl(215, 28%, 17%);
+  --primary: hsl(217, 91%, 60%);
   --primary-foreground: hsl(0, 0%, 100%);
-  --secondary: hsl(210, 25%, 7.8431%);
-  --secondary-foreground: hsl(0, 0%, 100%);
-  --muted: hsl(240, 1.9608%, 90%);
-  --muted-foreground: hsl(210, 25%, 7.8431%);
-  --accent: hsl(211.5789, 51.3514%, 92.7451%);
-  --accent-foreground: hsl(203.8863, 88.2845%, 53.1373%);
-  --destructive: hsl(356.3033, 90.5579%, 54.3137%);
+  --secondary: hsl(217, 32%, 93%);
+  --secondary-foreground: hsl(215, 28%, 17%);
+  --muted: hsl(217, 32%, 95%);
+  --muted-foreground: hsl(215, 16%, 47%);
+  --accent: hsl(217, 60%, 95%);
+  --accent-foreground: hsl(217, 91%, 60%);
+  --destructive: hsl(0, 84%, 60%);
   --destructive-foreground: hsl(0, 0%, 100%);
-  --border: hsl(201.4286, 30.4348%, 90.9804%);
-  --input: hsl(200, 23.0769%, 97.4510%);
-  --ring: hsl(202.8169, 89.1213%, 53.1373%);
-  --chart-1: hsl(203.8863, 88.2845%, 53.1373%);
-  --chart-2: hsl(159.7826, 100%, 36.0784%);
-  --chart-3: hsl(42.0290, 92.8251%, 56.2745%);
-  --chart-4: hsl(147.1429, 78.5047%, 41.9608%);
-  --chart-5: hsl(341.4894, 75.2000%, 50.9804%);
-  --sidebar: hsl(180, 6.6667%, 97.0588%);
-  --sidebar-foreground: hsl(210, 25%, 7.8431%);
-  --sidebar-primary: hsl(203.8863, 88.2845%, 53.1373%);
+  --border: hsl(217, 32%, 90%);
+  --input: hsl(217, 32%, 96%);
+  --ring: hsl(217, 91%, 60%);
+  --chart-1: hsl(217, 91%, 60%);
+  --chart-2: hsl(142, 71%, 45%);
+  --chart-3: hsl(38, 92%, 50%);
+  --chart-4: hsl(160, 60%, 45%);
+  --chart-5: hsl(340, 75%, 55%);
+  --sidebar: hsl(220, 50%, 97%);
+  --sidebar-foreground: hsl(215, 25%, 27%);
+  --sidebar-primary: hsl(217, 91%, 60%);
   --sidebar-primary-foreground: hsl(0, 0%, 100%);
-  --sidebar-accent: hsl(211.5789, 51.3514%, 92.7451%);
-  --sidebar-accent-foreground: hsl(203.8863, 88.2845%, 53.1373%);
-  --sidebar-border: hsl(205.0000, 25.0000%, 90.5882%);
-  --sidebar-ring: hsl(202.8169, 89.1213%, 53.1373%);
-  --font-sans: 'Inter', Open Sans, sans-serif;
+  --sidebar-accent: hsl(217, 60%, 95%);
+  --sidebar-accent-foreground: hsl(217, 91%, 60%);
+  --sidebar-border: hsl(217, 32%, 90%);
+  --sidebar-ring: hsl(217, 91%, 60%);
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --font-serif: Georgia, serif;
-  --font-mono: Menlo, monospace;
-  --radius: 1.3rem;
-  --shadow-2xs: 0px 2px 0px 0px hsl(202.8169, 89.1213%, 53.1373%, 0.00);
-  --shadow-xs: 0px 2px 0px 0px hsl(202.8169, 89.1213%, 53.1373%, 0.00);
-  --shadow-sm: 0px 2px 0px 0px hsl(202.8169, 89.1213%, 53.1373%, 0.00), 0px 1px 2px -1px hsl(202.8169, 89.1213%, 53.1373%, 0.00);
-  --shadow: 0px 2px 0px 0px hsl(202.8169, 89.1213%, 53.1373%, 0.00), 0px 1px 2px -1px hsl(202.8169, 89.1213%, 53.1373%, 0.00);
-  --shadow-md: 0px 2px 0px 0px hsl(202.8169, 89.1213%, 53.1373%, 0.00), 0px 2px 4px -1px hsl(202.8169, 89.1213%, 53.1373%, 0.00);
-  --shadow-lg: 0px 2px 0px 0px hsl(202.8169, 89.1213%, 53.1373%, 0.00), 0px 4px 6px -1px hsl(202.8169, 89.1213%, 53.1373%, 0.00);
-  --shadow-xl: 0px 2px 0px 0px hsl(202.8169, 89.1213%, 53.1373%, 0.00), 0px 8px 10px -1px hsl(202.8169, 89.1213%, 53.1373%, 0.00);
-  --shadow-2xl: 0px 2px 0px 0px hsl(202.8169, 89.1213%, 53.1373%, 0.00);
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+  --radius: 0.75rem;
+  --shadow-2xs: 0px 1px 2px 0px hsl(217, 32%, 17%, 0.05);
+  --shadow-xs: 0px 1px 3px 0px hsl(217, 32%, 17%, 0.10);
+  --shadow-sm: 0px 1px 2px 0px hsl(217, 32%, 17%, 0.05), 0px 1px 3px 0px hsl(217, 32%, 17%, 0.10);
+  --shadow: 0px 1px 3px 0px hsl(217, 32%, 17%, 0.10), 0px 1px 2px 0px hsl(217, 32%, 17%, 0.06);
+  --shadow-md: 0px 4px 6px -1px hsl(217, 32%, 17%, 0.10), 0px 2px 4px -1px hsl(217, 32%, 17%, 0.06);
+  --shadow-lg: 0px 10px 15px -3px hsl(217, 32%, 17%, 0.10), 0px 4px 6px -2px hsl(217, 32%, 17%, 0.05);
+  --shadow-xl: 0px 20px 25px -5px hsl(217, 32%, 17%, 0.10), 0px 10px 10px -5px hsl(217, 32%, 17%, 0.04);
+  --shadow-2xl: 0px 25px 50px -12px hsl(217, 32%, 17%, 0.25);
   --tracking-normal: 0em;
   --spacing: 0.25rem;
 
-  /* PassPilot Custom Colors */
-  --pilot-blue: hsl(210, 91%, 52%);
-  --pilot-blue-dark: hsl(210, 80%, 45%);
+  /* PassPilot Enhanced Blue Palette */
+  --pilot-blue: hsl(217, 91%, 60%);
+  --pilot-blue-light: hsl(217, 91%, 75%);
+  --pilot-blue-dark: hsl(217, 91%, 45%);
+  --pilot-blue-50: hsl(217, 91%, 95%);
+  --pilot-blue-100: hsl(217, 91%, 90%);
+  --pilot-blue-500: hsl(217, 91%, 60%);
+  --pilot-blue-600: hsl(217, 91%, 50%);
+  --pilot-blue-700: hsl(217, 91%, 40%);
   --pilot-success: hsl(142, 71%, 45%);
-  --pilot-warning: hsl(4, 90%, 58%);
-  --pilot-background: hsl(210, 17%, 98%);
+  --pilot-warning: hsl(38, 92%, 50%);
+  --pilot-danger: hsl(0, 84%, 60%);
+  --pilot-background: hsl(220, 50%, 98%);
+  --pilot-surface: hsl(220, 50%, 99%);
+  --pilot-glass: hsl(220, 50%, 99%, 0.8);
 }
 
 .dark {
@@ -135,31 +145,44 @@
 }
 
 @layer utilities {
-  .pilot-blue {
-    color: var(--pilot-blue);
+  /* PassPilot Color Utilities */
+  .pilot-blue { color: var(--pilot-blue); }
+  .bg-pilot-blue { background-color: var(--pilot-blue); }
+  .pilot-blue-light { color: var(--pilot-blue-light); }
+  .bg-pilot-blue-light { background-color: var(--pilot-blue-light); }
+  .pilot-blue-dark { color: var(--pilot-blue-dark); }
+  .bg-pilot-blue-dark { background-color: var(--pilot-blue-dark); }
+  .bg-pilot-blue-50 { background-color: var(--pilot-blue-50); }
+  .bg-pilot-blue-100 { background-color: var(--pilot-blue-100); }
+  .bg-pilot-blue-500 { background-color: var(--pilot-blue-500); }
+  .bg-pilot-blue-600 { background-color: var(--pilot-blue-600); }
+  .bg-pilot-blue-700 { background-color: var(--pilot-blue-700); }
+  .pilot-success { color: var(--pilot-success); }
+  .bg-pilot-success { background-color: var(--pilot-success); }
+  .pilot-warning { color: var(--pilot-warning); }
+  .bg-pilot-warning { background-color: var(--pilot-warning); }
+  .pilot-danger { color: var(--pilot-danger); }
+  .bg-pilot-danger { background-color: var(--pilot-danger); }
+  .bg-pilot-background { background-color: var(--pilot-background); }
+  .bg-pilot-surface { background-color: var(--pilot-surface); }
+  .bg-pilot-glass { background-color: var(--pilot-glass); backdrop-filter: blur(8px); }
+  
+  /* Gradient Utilities */
+  .bg-pilot-gradient { 
+    background: linear-gradient(135deg, var(--pilot-blue) 0%, var(--pilot-blue-dark) 100%); 
   }
-  .bg-pilot-blue {
-    background-color: var(--pilot-blue);
+  .bg-pilot-gradient-light { 
+    background: linear-gradient(135deg, var(--pilot-blue-50) 0%, var(--pilot-blue-100) 100%); 
   }
-  .pilot-blue-dark {
-    color: var(--pilot-blue-dark);
-  }
-  .bg-pilot-blue-dark {
-    background-color: var(--pilot-blue-dark);
-  }
-  .pilot-success {
-    color: var(--pilot-success);
-  }
-  .bg-pilot-success {
-    background-color: var(--pilot-success);
-  }
-  .pilot-warning {
-    color: var(--pilot-warning);
-  }
-  .bg-pilot-warning {
-    background-color: var(--pilot-warning);
-  }
-  .bg-pilot-background {
-    background-color: var(--pilot-background);
+  
+  /* Enhanced Shadows */
+  .shadow-pilot { box-shadow: var(--shadow-lg); }
+  .shadow-pilot-xl { box-shadow: var(--shadow-xl); }
+  
+  /* Glass Morphism */
+  .glass {
+    backdrop-filter: blur(12px) saturate(200%);
+    background-color: var(--pilot-glass);
+    border: 1px solid hsl(220, 50%, 90%, 0.18);
   }
 }

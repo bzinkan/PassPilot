@@ -50,31 +50,31 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-pilot-background">
       {/* Header */}
-      <header className="bg-white dark:bg-gray-800 shadow-sm border-b">
-        <div className="container mx-auto px-4 py-4">
+      <header className="bg-white/80 backdrop-blur-lg border-b border-pilot-blue-100 shadow-pilot">
+        <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <div className="bg-blue-600 p-2 rounded-lg">
+              <div className="bg-pilot-gradient p-3 rounded-xl shadow-pilot">
                 <GraduationCap className="h-6 w-6 text-white" />
               </div>
               <div>
-                <h1 className="text-xl font-bold text-gray-900 dark:text-white">
+                <h1 className="text-2xl font-bold text-pilot-blue-dark">
                   PassPilot
                 </h1>
-                <p className="text-sm text-gray-600 dark:text-gray-300">
-                  Welcome back, User
+                <p className="text-sm text-pilot-blue/70">
+                  Welcome back, {user?.email || 'User'}
                 </p>
               </div>
             </div>
 
             <div className="flex items-center space-x-4">
-              <Badge variant="outline" className="capitalize">
-                Teacher
+              <Badge className="bg-pilot-blue-100 text-pilot-blue-dark border-pilot-blue-200 capitalize px-3 py-1">
+                {user?.role || 'Teacher'}
               </Badge>
               <Button
-                variant="outline"
+                className="bg-pilot-blue-100 text-pilot-blue-dark hover:bg-pilot-blue-200 border-pilot-blue-200"
                 size="sm"
                 onClick={handleLogout}
                 disabled={logoutMutation.isPending}
@@ -89,39 +89,45 @@ export default function Dashboard() {
       </header>
 
       {/* Stats Cards */}
-      <div className="container mx-auto px-4 py-6">
+      <div className="container mx-auto px-6 py-8">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <Card>
+          <Card className="bg-white/80 backdrop-blur-sm border-pilot-blue-100 shadow-pilot hover:shadow-pilot-xl transition-all duration-200">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Students</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium text-pilot-blue-dark">Total Students</CardTitle>
+              <div className="bg-pilot-blue-100 p-2 rounded-lg">
+                <Users className="h-4 w-4 text-pilot-blue" />
+              </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold" data-testid="text-total-students">
+              <div className="text-2xl font-bold text-pilot-blue-dark" data-testid="text-total-students">
                 {stats?.totalStudents ?? 0}
               </div>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="bg-white/80 backdrop-blur-sm border-pilot-blue-100 shadow-pilot hover:shadow-pilot-xl transition-all duration-200">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Students Out</CardTitle>
-              <Clock className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium text-pilot-blue-dark">Students Out</CardTitle>
+              <div className="bg-pilot-warning/10 p-2 rounded-lg">
+                <Clock className="h-4 w-4 text-pilot-warning" />
+              </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-orange-600" data-testid="text-students-out">
+              <div className="text-2xl font-bold text-pilot-warning" data-testid="text-students-out">
                 {stats?.studentsOut ?? 0}
               </div>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="bg-white/80 backdrop-blur-sm border-pilot-blue-100 shadow-pilot hover:shadow-pilot-xl transition-all duration-200">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Available</CardTitle>
-              <UserCheck className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium text-pilot-blue-dark">Available</CardTitle>
+              <div className="bg-pilot-success/10 p-2 rounded-lg">
+                <UserCheck className="h-4 w-4 text-pilot-success" />
+              </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-green-600" data-testid="text-available-students">
+              <div className="text-2xl font-bold text-pilot-success" data-testid="text-available-students">
                 {stats?.availableStudents ?? 0}
               </div>
             </CardContent>
@@ -130,20 +136,20 @@ export default function Dashboard() {
 
         {/* Main Content Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="myclass" data-testid="tab-myclass">
+          <TabsList className="grid w-full grid-cols-4 bg-white/80 backdrop-blur-sm border-pilot-blue-100 shadow-pilot p-1">
+            <TabsTrigger value="myclass" data-testid="tab-myclass" className="data-[state=active]:bg-pilot-gradient data-[state=active]:text-white">
               <UserCheck className="h-4 w-4 mr-2" />
               My Class
             </TabsTrigger>
-            <TabsTrigger value="passes" data-testid="tab-passes">
+            <TabsTrigger value="passes" data-testid="tab-passes" className="data-[state=active]:bg-pilot-gradient data-[state=active]:text-white">
               <ClipboardList className="h-4 w-4 mr-2" />
               All Passes
             </TabsTrigger>
-            <TabsTrigger value="roster" data-testid="tab-roster">
+            <TabsTrigger value="roster" data-testid="tab-roster" className="data-[state=active]:bg-pilot-gradient data-[state=active]:text-white">
               <UserPlus className="h-4 w-4 mr-2" />
               Roster
             </TabsTrigger>
-            <TabsTrigger value="admin" data-testid="tab-admin">
+            <TabsTrigger value="admin" data-testid="tab-admin" className="data-[state=active]:bg-pilot-gradient data-[state=active]:text-white">
               <Settings className="h-4 w-4 mr-2" />
               Admin
             </TabsTrigger>
@@ -162,15 +168,15 @@ export default function Dashboard() {
           </TabsContent>
 
           <TabsContent value="admin" className="space-y-6">
-            <Card>
+            <Card className="bg-white/80 backdrop-blur-sm border-pilot-blue-100 shadow-pilot">
               <CardHeader>
-                <CardTitle>Administrative Functions</CardTitle>
-                <CardDescription>
+                <CardTitle className="text-pilot-blue-dark">Administrative Functions</CardTitle>
+                <CardDescription className="text-pilot-blue/70">
                   School administration and system settings
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <p className="text-gray-600 dark:text-gray-300">
+                <p className="text-pilot-blue/60">
                   Administrative features coming soon...
                 </p>
               </CardContent>

@@ -42,56 +42,67 @@ export default function Landing() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
-      <div className="container mx-auto px-4 py-8">
+    <div className="min-h-screen bg-pilot-gradient dark:from-gray-900 dark:to-gray-800 relative overflow-hidden">
+      {/* Background decoration */}
+      <div className="absolute inset-0 bg-pilot-gradient-light opacity-30"></div>
+      <div className="absolute top-0 left-0 w-96 h-96 bg-pilot-blue-50 rounded-full -translate-x-48 -translate-y-48 opacity-50"></div>
+      <div className="absolute bottom-0 right-0 w-96 h-96 bg-pilot-blue-100 rounded-full translate-x-48 translate-y-48 opacity-30"></div>
+      
+      <div className="relative z-10 container mx-auto px-4 py-8">
         {/* Header */}
         <div className="text-center mb-12">
-          <div className="flex justify-center mb-4">
-            <div className="bg-blue-600 p-3 rounded-xl">
-              <GraduationCap className="h-8 w-8 text-white" />
+          <div className="flex justify-center mb-6">
+            <div className="bg-pilot-gradient p-4 rounded-2xl shadow-pilot-xl">
+              <GraduationCap className="h-10 w-10 text-white" />
             </div>
           </div>
-          <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">
+          <h1 className="text-5xl font-bold text-white mb-4 tracking-tight">
             PassPilot
           </h1>
-          <p className="text-xl text-gray-600 dark:text-gray-300">
+          <p className="text-xl text-white/90 font-medium">
             Modern school pass management system
           </p>
         </div>
 
-        <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-8 items-center">
+        <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-12 items-center">
           {/* Features */}
-          <div className="space-y-6">
-            <h2 className="text-2xl font-semibold text-gray-900 dark:text-white">
+          <div className="space-y-8">
+            <h2 className="text-3xl font-bold text-white mb-8">
               Streamline Student Movement
             </h2>
             
-            <div className="grid gap-4">
-              <div className="flex items-start space-x-3">
-                <Users className="h-6 w-6 text-blue-600 mt-1" />
+            <div className="grid gap-6">
+              <div className="flex items-start space-x-4 p-6 glass rounded-xl shadow-pilot">
+                <div className="bg-white/20 p-3 rounded-xl">
+                  <Users className="h-6 w-6 text-white" />
+                </div>
                 <div>
-                  <h3 className="font-medium text-gray-900 dark:text-white">Digital Pass Management</h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                  <h3 className="font-semibold text-white mb-2 text-lg">Digital Pass Management</h3>
+                  <p className="text-white/80 leading-relaxed">
                     Issue and track student passes digitally with real-time status updates.
                   </p>
                 </div>
               </div>
 
-              <div className="flex items-start space-x-3">
-                <Shield className="h-6 w-6 text-blue-600 mt-1" />
+              <div className="flex items-start space-x-4 p-6 glass rounded-xl shadow-pilot">
+                <div className="bg-white/20 p-3 rounded-xl">
+                  <Shield className="h-6 w-6 text-white" />
+                </div>
                 <div>
-                  <h3 className="font-medium text-gray-900 dark:text-white">Enhanced Safety</h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                  <h3 className="font-semibold text-white mb-2 text-lg">Enhanced Safety</h3>
+                  <p className="text-white/80 leading-relaxed">
                     Know where students are at all times with comprehensive tracking.
                   </p>
                 </div>
               </div>
 
-              <div className="flex items-start space-x-3">
-                <BarChart3 className="h-6 w-6 text-blue-600 mt-1" />
+              <div className="flex items-start space-x-4 p-6 glass rounded-xl shadow-pilot">
+                <div className="bg-white/20 p-3 rounded-xl">
+                  <BarChart3 className="h-6 w-6 text-white" />
+                </div>
                 <div>
-                  <h3 className="font-medium text-gray-900 dark:text-white">Detailed Reports</h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                  <h3 className="font-semibold text-white mb-2 text-lg">Detailed Reports</h3>
+                  <p className="text-white/80 leading-relaxed">
                     Generate insights on student movement patterns and pass usage.
                   </p>
                 </div>
@@ -100,10 +111,10 @@ export default function Landing() {
           </div>
 
           {/* Login Form */}
-          <Card className="w-full max-w-md mx-auto">
-            <CardHeader>
-              <CardTitle>Sign In</CardTitle>
-              <CardDescription>
+          <Card className="w-full max-w-md mx-auto glass border-white/30 shadow-pilot-xl">
+            <CardHeader className="text-center">
+              <CardTitle className="text-2xl font-bold text-white">Sign In</CardTitle>
+              <CardDescription className="text-white/70">
                 Enter your credentials to access PassPilot
               </CardDescription>
             </CardHeader>
@@ -147,7 +158,7 @@ export default function Landing() {
 
                 <Button
                   type="submit"
-                  className="w-full"
+                  className="w-full bg-pilot-gradient hover:bg-pilot-blue-dark text-white font-semibold py-3 shadow-pilot transition-all duration-200"
                   disabled={loginMutation.isPending}
                   data-testid="button-login"
                 >

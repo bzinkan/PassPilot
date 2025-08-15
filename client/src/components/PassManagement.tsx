@@ -99,10 +99,10 @@ export default function PassManagement() {
   return (
     <div className="space-y-6">
       {/* Create Pass Form */}
-      <Card>
+      <Card className="bg-white/80 backdrop-blur-sm border-pilot-blue-100 shadow-pilot">
         <CardHeader>
-          <CardTitle>Issue New Pass</CardTitle>
-          <CardDescription>
+          <CardTitle className="text-pilot-blue-dark">Issue New Pass</CardTitle>
+          <CardDescription className="text-pilot-blue/70">
             Create a new pass for a student
           </CardDescription>
         </CardHeader>
@@ -152,6 +152,7 @@ export default function PassManagement() {
 
             <Button
               type="submit"
+              className="bg-pilot-gradient hover:bg-pilot-blue-dark text-white shadow-pilot"
               disabled={createPassMutation.isPending}
               data-testid="button-create-pass"
             >
