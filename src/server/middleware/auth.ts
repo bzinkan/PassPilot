@@ -63,19 +63,31 @@ export function readSession(req: Request): Session | null {
   }
 }
 
-export function requireAuth(req: Request, res: Response, next: NextFunction) {
+export function requireAuth(req: Request, res: Response, next: NextFunction): void {
   const s = readSession(req);
-  if (!s || !s.userId || !s.schoolId) return res.status(401).json({ error: 'Unauthorized' });
+  if (!s || !s.userId || !s.schoolId) {
+    res.status(401).json({ error: 'Unauthorized' });
+    return;
+  }
   (req as AuthenticatedRequest).session = s;
   next();
 }
 
 export function requireRole(role: 'admin' | 'superadmin') {
-  return (req: Request, res: Response, next: NextFunction) => {
+  return (req: Request, res: Response, next: NextFunction): void => {
     const s = (req as AuthenticatedRequest).session;
-    if (!s) return res.status(401).json({ error: 'Unauthorized' });
-    if (role === 'admin' && !['admin', 'superadmin'].includes(s.role)) return res.status(403).json({ error: 'Forbidden' });
-    if (role === 'superadmin' && s.role !== 'superadmin') return res.status(403).json({ error: 'Forbidden' });
+    if (!s) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+    if (role === 'admin' && !['admin', 'superadmin'].includes(s.role)) {
+      res.status(403).json({ error: 'Forbidden' });
+      return;
+    }
+    if (role === 'superadmin' && s.role !== 'superadmin') {
+      res.status(403).json({ error: 'Forbidden' });
+      return;
+    }
     next();
   };
 }

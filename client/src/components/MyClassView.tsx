@@ -1,336 +1,196 @@
-import { useState } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Users, Clock, UserPlus, ArrowLeft } from "lucide-react";
-import { apiRequest, queryClient } from "@/lib/queryClient";
-import { useToast } from "@/hooks/use-toast";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Users, UserCheck, Clock, MapPin } from "lucide-react";
 
 export default function MyClassView() {
-  const [selectedStudentId, setSelectedStudentId] = useState("");
-  const [passType, setPassType] = useState("general");
-  const [customReason, setCustomReason] = useState("");
-  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const { toast } = useToast();
-
-  const { data: students } = useQuery({
-    queryKey: ["/myclass/students"],
+  const { data: classData, isLoading } = useQuery({
+    queryKey: ["/myclass"],
   });
 
   const { data: activePasses } = useQuery({
-    queryKey: ["/myclass/passes/active"],
+    queryKey: ["/passes", "mine"],
   });
 
-  const createPassMutation = useMutation({
-    mutationFn: async (data: any) => {
-      return apiRequest("POST", "/myclass/pass", data);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/myclass"] });
-      setIsCreateDialogOpen(false);
-      setSelectedStudentId("");
-      setPassType("general");
-      setCustomReason("");
-      toast({
-        title: "Pass Created",
-        description: "Student pass has been issued successfully",
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to create pass",
-        variant: "destructive",
-      });
-    },
-  });
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
+      </div>
+    );
+  }
 
-  const returnPassMutation = useMutation({
-    mutationFn: async (passId: number) => {
-      return apiRequest("PATCH", `/myclass/pass/${passId}/return`);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/myclass"] });
-      toast({
-        title: "Pass Returned",
-        description: "Student has been marked as returned",
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to return pass",
-        variant: "destructive",
-      });
-    },
-  });
-
-  const handleCreatePass = () => {
-    if (!selectedStudentId) {
-      toast({
-        title: "Missing Information",
-        description: "Please select a student",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (passType === "custom" && !customReason.trim()) {
-      toast({
-        title: "Missing Information", 
-        description: "Please enter a custom reason",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    createPassMutation.mutate({
-      studentId: parseInt(selectedStudentId),
-      type: passType,
-      customReason: passType === "custom" ? customReason : undefined,
-    });
-  };
-
-  const handleReturnPass = (passId: number) => {
-    returnPassMutation.mutate(passId);
-  };
-
-  const getPassTypeLabel = (type: string, customReason?: string) => {
-    if (type === "custom") return customReason || "Custom";
-    return type.charAt(0).toUpperCase() + type.slice(1);
-  };
-
-  const getPassTypeColor = (type: string) => {
-    switch (type) {
-      case "general": return "default";
-      case "nurse": return "destructive";
-      case "discipline": return "secondary";
-      case "custom": return "outline";
-      default: return "default";
-    }
-  };
+  const stats = classData?.stats || {};
+  const grades = classData?.gradesActive || [];
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">My Class</h2>
-          <p className="text-gray-600 dark:text-gray-300">
-            Manage your current students and active passes
-          </p>
-        </div>
-        
-        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-          <DialogTrigger asChild>
-            <Button data-testid="button-create-pass">
-              <UserPlus className="h-4 w-4 mr-2" />
-              Issue Pass
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Issue Student Pass</DialogTitle>
-              <DialogDescription>
-                Create a new pass for a student in your class
-              </DialogDescription>
-            </DialogHeader>
-            
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="student">Student</Label>
-                <Select value={selectedStudentId} onValueChange={setSelectedStudentId}>
-                  <SelectTrigger data-testid="select-student">
-                    <SelectValue placeholder="Select a student" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {students && Array.isArray(students) ? students.filter((student: any) => !student.hasActivePass)?.map((student: any) => (
-                      <SelectItem key={student.id} value={student.id.toString()}>
-                        {student.name} ({student.grade})
-                      </SelectItem>
-                    )) : null}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="type">Pass Type</Label>
-                <Select value={passType} onValueChange={setPassType}>
-                  <SelectTrigger data-testid="select-pass-type">
-                    <SelectValue placeholder="Select pass type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="general">General</SelectItem>
-                    <SelectItem value="nurse">Nurse</SelectItem>
-                    <SelectItem value="discipline">Discipline</SelectItem>
-                    <SelectItem value="custom">Custom</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {passType === "custom" && (
-                <div className="space-y-2">
-                  <Label htmlFor="customReason">Custom Reason</Label>
-                  <Input
-                    id="customReason"
-                    value={customReason}
-                    onChange={(e) => setCustomReason(e.target.value)}
-                    placeholder="Enter custom reason"
-                    data-testid="input-custom-reason"
-                  />
-                </div>
-              )}
-
-              <div className="flex justify-end space-x-2">
-                <Button
-                  variant="outline"
-                  onClick={() => setIsCreateDialogOpen(false)}
-                  data-testid="button-cancel-pass"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  onClick={handleCreatePass}
-                  disabled={createPassMutation.isPending}
-                  data-testid="button-submit-pass"
-                >
-                  {createPassMutation.isPending ? "Creating..." : "Create Pass"}
-                </Button>
-              </div>
+      {/* Quick Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card>
+          <CardContent className="flex items-center space-x-4 p-6">
+            <Users className="h-8 w-8 text-blue-600" />
+            <div>
+              <p className="text-2xl font-bold" data-testid="text-total-students">
+                {stats.totalStudents || 0}
+              </p>
+              <p className="text-sm text-gray-600">Total Students</p>
             </div>
-          </DialogContent>
-        </Dialog>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="flex items-center space-x-4 p-6">
+            <UserCheck className="h-8 w-8 text-green-600" />
+            <div>
+              <p className="text-2xl font-bold" data-testid="text-students-present">
+                {stats.availableStudents || 0}
+              </p>
+              <p className="text-sm text-gray-600">Students Present</p>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="flex items-center space-x-4 p-6">
+            <Clock className="h-8 w-8 text-orange-600" />
+            <div>
+              <p className="text-2xl font-bold" data-testid="text-students-out">
+                {stats.studentsOut || 0}
+              </p>
+              <p className="text-sm text-gray-600">Students Out</p>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
-      {/* Active Passes */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center">
-            <Clock className="h-5 w-5 mr-2" />
-            Active Passes
-          </CardTitle>
-          <CardDescription>
-            Students currently out of class
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {activePasses && Array.isArray(activePasses) && activePasses.length > 0 ? (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Student</TableHead>
-                  <TableHead>Grade</TableHead>
-                  <TableHead>Pass Type</TableHead>
-                  <TableHead>Time Out</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {activePasses.map((pass: any) => (
-                  <TableRow key={pass.id}>
-                    <TableCell className="font-medium" data-testid={`text-student-${pass.id}`}>
-                      {pass.studentName || pass.student?.name}
-                    </TableCell>
-                    <TableCell data-testid={`text-grade-${pass.id}`}>
-                      {pass.student?.grade || "-"}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={getPassTypeColor(pass.type || "general")}>
-                        {getPassTypeLabel(pass.type || "general", pass.customReason)}
-                      </Badge>
-                    </TableCell>
-                    <TableCell data-testid={`text-time-${pass.id}`}>
-                      {new Date(pass.startsAt).toLocaleTimeString()}
-                    </TableCell>
-                    <TableCell>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleReturnPass(pass.id)}
-                        disabled={returnPassMutation.isPending}
-                        data-testid={`button-return-${pass.id}`}
-                      >
-                        <ArrowLeft className="h-4 w-4 mr-1" />
-                        Return
-                      </Button>
-                    </TableCell>
-                  </TableRow>
+      {/* Grade Tabs */}
+      {grades.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>My Classes</CardTitle>
+            <CardDescription>
+              Students organized by grade level
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Tabs defaultValue={grades[0]?.id?.toString()} className="w-full">
+              <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4">
+                {grades.slice(0, 4).map((grade: any) => (
+                  <TabsTrigger 
+                    key={grade.id} 
+                    value={grade.id.toString()}
+                    data-testid={`tab-grade-${grade.id}`}
+                  >
+                    {grade.name}
+                  </TabsTrigger>
                 ))}
-              </TableBody>
-            </Table>
-          ) : (
-            <div className="text-center py-8">
-              <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-600 dark:text-gray-300">
-                No students currently out of class
-              </p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+              </TabsList>
 
-      {/* All Students Status */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center">
-            <Users className="h-5 w-5 mr-2" />
-            Student Status
-          </CardTitle>
-          <CardDescription>
-            Current status of all students in your selected grades
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {students && Array.isArray(students) && students.length > 0 ? (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Student</TableHead>
-                  <TableHead>Grade</TableHead>
-                  <TableHead>Student Code</TableHead>
-                  <TableHead>Status</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {students.map((student: any) => (
-                  <TableRow key={student.id}>
-                    <TableCell className="font-medium" data-testid={`text-student-name-${student.id}`}>
-                      {student.name}
-                    </TableCell>
-                    <TableCell data-testid={`text-student-grade-${student.id}`}>
-                      {student.grade}
-                    </TableCell>
-                    <TableCell data-testid={`text-student-code-${student.id}`}>
-                      {student.studentCode || "-"}
-                    </TableCell>
-                    <TableCell>
-                      <Badge 
-                        variant={student.hasActivePass ? "destructive" : "default"}
-                        data-testid={`badge-status-${student.id}`}
-                      >
-                        {student.hasActivePass ? "Out" : "Available"}
-                      </Badge>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          ) : (
-            <div className="text-center py-8">
-              <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-600 dark:text-gray-300">
-                No students in your selected grades. Go to the Roster tab to select grades to manage.
-              </p>
+              {grades.map((grade: any) => (
+                <TabsContent key={grade.id} value={grade.id.toString()} className="mt-4">
+                  <div className="space-y-3">
+                    <h4 className="font-medium text-lg">
+                      {grade.name} - {grade.students?.length || 0} Students
+                    </h4>
+                    
+                    {grade.students?.length ? (
+                      <div className="grid gap-2">
+                        {grade.students.map((student: any) => {
+                          const hasActivePass = activePasses?.some((pass: any) => 
+                            pass.studentName === student.name && pass.status === 'active'
+                          );
+                          
+                          return (
+                            <div
+                              key={student.id}
+                              className={`flex items-center justify-between p-3 rounded-lg border ${
+                                hasActivePass 
+                                  ? "bg-orange-50 border-orange-200 dark:bg-orange-900/20" 
+                                  : "bg-green-50 border-green-200 dark:bg-green-900/20"
+                              }`}
+                              data-testid={`student-row-${student.id}`}
+                            >
+                              <div className="flex items-center space-x-3">
+                                <div className={`w-3 h-3 rounded-full ${
+                                  hasActivePass ? "bg-orange-500" : "bg-green-500"
+                                }`} />
+                                <div>
+                                  <span className="font-medium" data-testid={`text-student-name-${student.id}`}>
+                                    {student.name}
+                                  </span>
+                                  {student.studentCode && (
+                                    <span className="ml-2 text-sm text-gray-600">
+                                      ({student.studentCode})
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                              
+                              <Badge 
+                                variant={hasActivePass ? "destructive" : "default"}
+                                data-testid={`badge-status-${student.id}`}
+                              >
+                                {hasActivePass ? "Out" : "Present"}
+                              </Badge>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <div className="text-center py-8 text-gray-500">
+                        No students in this grade
+                      </div>
+                    )}
+                  </div>
+                </TabsContent>
+              ))}
+            </Tabs>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Active Passes from My Classes */}
+      {activePasses?.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>My Active Passes</CardTitle>
+            <CardDescription>
+              Students from your classes currently out
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {activePasses.map((pass: any) => (
+                <div
+                  key={pass.id}
+                  className="flex items-center space-x-4 p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg border border-orange-200"
+                  data-testid={`active-pass-${pass.id}`}
+                >
+                  <Clock className="h-4 w-4 text-orange-600" />
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium" data-testid={`text-pass-student-${pass.id}`}>
+                        {pass.studentName}
+                      </span>
+                      <span className="text-sm text-gray-600" data-testid={`text-pass-time-${pass.id}`}>
+                        {new Date(pass.startsAt).toLocaleTimeString()}
+                      </span>
+                    </div>
+                    <div className="flex items-center space-x-2 text-sm text-gray-600">
+                      <MapPin className="h-3 w-3" />
+                      <span data-testid={`text-pass-reason-${pass.id}`}>
+                        {pass.reason}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
-          )}
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

@@ -64,14 +64,14 @@ export default function Dashboard() {
                   PassPilot
                 </h1>
                 <p className="text-sm text-gray-600 dark:text-gray-300">
-                  Welcome back, {user?.email || 'User'}
+                  Welcome back, User
                 </p>
               </div>
             </div>
 
             <div className="flex items-center space-x-4">
               <Badge variant="outline" className="capitalize">
-                {user?.role || 'user'}
+                Teacher
               </Badge>
               <Button
                 variant="outline"

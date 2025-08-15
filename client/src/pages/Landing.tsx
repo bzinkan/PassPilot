@@ -1,11 +1,10 @@
 import { useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { GraduationCap, Shield, Users } from "lucide-react";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { GraduationCap, Users, Shield, BarChart3 } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
@@ -15,19 +14,12 @@ export default function Landing() {
   const [schoolId, setSchoolId] = useState("");
   const { toast } = useToast();
 
-  const { data: schools } = useQuery({
-    queryKey: ["/admin/schools"],
-    retry: false,
-  });
-
   const loginMutation = useMutation({
-    mutationFn: async (data: { email: string; password: string; schoolId: number }) => {
-      return apiRequest("POST", "/login", data);
-    },
+    mutationFn: () => apiRequest("POST", "/auth/login", { email, password, schoolId: Number(schoolId) }),
     onSuccess: () => {
       window.location.reload();
     },
-    onError: (error: any) => {
+    onError: (error) => {
       toast({
         title: "Login Failed",
         description: error.message || "Invalid credentials",
@@ -46,101 +38,87 @@ export default function Landing() {
       });
       return;
     }
-    loginMutation.mutate({
-      email,
-      password,
-      schoolId: parseInt(schoolId),
-    });
+    loginMutation.mutate();
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
-      <div className="container mx-auto px-4 py-16">
+      <div className="container mx-auto px-4 py-8">
         {/* Header */}
-        <div className="text-center mb-16">
-          <div className="flex justify-center mb-6">
-            <div className="bg-blue-600 p-4 rounded-full">
-              <GraduationCap className="h-12 w-12 text-white" />
+        <div className="text-center mb-12">
+          <div className="flex justify-center mb-4">
+            <div className="bg-blue-600 p-3 rounded-xl">
+              <GraduationCap className="h-8 w-8 text-white" />
             </div>
           </div>
-          <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
+          <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">
             PassPilot
           </h1>
-          <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-            Comprehensive school pass management system designed to streamline student movement tracking with real-time monitoring and detailed reporting.
+          <p className="text-xl text-gray-600 dark:text-gray-300">
+            Modern school pass management system
           </p>
         </div>
 
-        {/* Features */}
-        <div className="grid md:grid-cols-3 gap-8 mb-16">
-          <Card className="text-center">
-            <CardHeader>
-              <div className="flex justify-center mb-4">
-                <Users className="h-8 w-8 text-blue-600" />
+        <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-8 items-center">
+          {/* Features */}
+          <div className="space-y-6">
+            <h2 className="text-2xl font-semibold text-gray-900 dark:text-white">
+              Streamline Student Movement
+            </h2>
+            
+            <div className="grid gap-4">
+              <div className="flex items-start space-x-3">
+                <Users className="h-6 w-6 text-blue-600 mt-1" />
+                <div>
+                  <h3 className="font-medium text-gray-900 dark:text-white">Digital Pass Management</h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    Issue and track student passes digitally with real-time status updates.
+                  </p>
+                </div>
               </div>
-              <CardTitle>Student Management</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-gray-600 dark:text-gray-300">
-                Manage student rosters with grade organization and structured pass tracking
-              </p>
-            </CardContent>
-          </Card>
 
-          <Card className="text-center">
-            <CardHeader>
-              <div className="flex justify-center mb-4">
-                <Shield className="h-8 w-8 text-green-600" />
+              <div className="flex items-start space-x-3">
+                <Shield className="h-6 w-6 text-blue-600 mt-1" />
+                <div>
+                  <h3 className="font-medium text-gray-900 dark:text-white">Enhanced Safety</h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    Know where students are at all times with comprehensive tracking.
+                  </p>
+                </div>
               </div>
-              <CardTitle>Real-time Tracking</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-gray-600 dark:text-gray-300">
-                Monitor active passes with safety reporting and classroom disruption reduction
-              </p>
-            </CardContent>
-          </Card>
 
-          <Card className="text-center">
-            <CardHeader>
-              <div className="flex justify-center mb-4">
-                <GraduationCap className="h-8 w-8 text-purple-600" />
+              <div className="flex items-start space-x-3">
+                <BarChart3 className="h-6 w-6 text-blue-600 mt-1" />
+                <div>
+                  <h3 className="font-medium text-gray-900 dark:text-white">Detailed Reports</h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    Generate insights on student movement patterns and pass usage.
+                  </p>
+                </div>
               </div>
-              <CardTitle>Multi-School Support</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-gray-600 dark:text-gray-300">
-                Complete tenant isolation with kiosk mode for student self-service
-              </p>
-            </CardContent>
-          </Card>
-        </div>
+            </div>
+          </div>
 
-        {/* Login Form */}
-        <div className="flex justify-center">
-          <Card className="w-full max-w-md">
+          {/* Login Form */}
+          <Card className="w-full max-w-md mx-auto">
             <CardHeader>
-              <CardTitle>Teacher Login</CardTitle>
+              <CardTitle>Sign In</CardTitle>
               <CardDescription>
-                Access your PassPilot dashboard to manage student passes
+                Enter your credentials to access PassPilot
               </CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleLogin} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="school">School</Label>
-                  <Select value={schoolId} onValueChange={setSchoolId}>
-                    <SelectTrigger data-testid="select-school">
-                      <SelectValue placeholder="Select your school" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {schools && Array.isArray(schools) ? schools.map((school: any) => (
-                        <SelectItem key={school.id} value={school.id.toString()}>
-                          {school.name}
-                        </SelectItem>
-                      )) : null}
-                    </SelectContent>
-                  </Select>
+                  <Label htmlFor="schoolId">School ID</Label>
+                  <Input
+                    id="schoolId"
+                    type="number"
+                    placeholder="Enter school ID"
+                    value={schoolId}
+                    onChange={(e) => setSchoolId(e.target.value)}
+                    data-testid="input-school-id"
+                  />
                 </div>
 
                 <div className="space-y-2">
@@ -148,9 +126,9 @@ export default function Landing() {
                   <Input
                     id="email"
                     type="email"
+                    placeholder="Enter your email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="teacher@school.edu"
                     data-testid="input-email"
                   />
                 </div>
@@ -160,9 +138,9 @@ export default function Landing() {
                   <Input
                     id="password"
                     type="password"
+                    placeholder="Enter your password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Enter your password"
                     data-testid="input-password"
                   />
                 </div>
