@@ -121,7 +121,7 @@ export default function Landing() {
             <CardContent>
               <form onSubmit={handleLogin} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="schoolId">School ID</Label>
+                  <Label htmlFor="schoolId" className="text-white font-medium">School ID</Label>
                   <Input
                     id="schoolId"
                     type="number"
@@ -133,7 +133,7 @@ export default function Landing() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
+                  <Label htmlFor="email" className="text-white font-medium">Email</Label>
                   <Input
                     id="email"
                     type="email"
@@ -145,7 +145,7 @@ export default function Landing() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="password">Password</Label>
+                  <Label htmlFor="password" className="text-white font-medium">Password</Label>
                   <Input
                     id="password"
                     type="password"
