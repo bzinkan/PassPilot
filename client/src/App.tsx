@@ -9,6 +9,7 @@ import Dashboard from "@/pages/Dashboard";
 import KioskLogin from "@/pages/KioskLogin";
 import KioskDashboard from "@/pages/KioskDashboard";
 import SuperAdminBootstrap from "@/pages/SuperAdminBootstrap";
+import SuperAdminDashboard from "@/pages/SuperAdminDashboard";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -20,8 +21,9 @@ function Router() {
       <Route path="/kiosk/login" component={KioskLogin} />
       <Route path="/kiosk/dashboard" component={KioskDashboard} />
       
-      {/* Super Admin bootstrap - no authentication needed */}
+      {/* Super Admin routes */}
       <Route path="/super-admin/bootstrap" component={SuperAdminBootstrap} />
+      <Route path="/super-admin/dashboard" component={SuperAdminDashboard} />
       
       {/* Main app routes */}
       {isLoading || !isAuthenticated ? (

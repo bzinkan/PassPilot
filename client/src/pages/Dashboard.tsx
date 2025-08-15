@@ -12,7 +12,8 @@ import {
   Settings, 
   ClipboardList,
   UserPlus,
-  GraduationCap
+  GraduationCap,
+  Shield
 } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -175,9 +176,24 @@ export default function Dashboard() {
                   School administration and system settings
                 </CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="space-y-4">
+                {user?.role === 'superadmin' && (
+                  <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                    <h3 className="font-semibold text-red-800 mb-2">Super Admin Access</h3>
+                    <p className="text-red-700 mb-3">
+                      You have Super Admin privileges. Access the full administrative dashboard for cross-tenant management.
+                    </p>
+                    <Button
+                      onClick={() => window.location.href = '/super-admin/dashboard'}
+                      className="bg-red-600 hover:bg-red-700 text-white"
+                    >
+                      <Shield className="h-4 w-4 mr-2" />
+                      Open Super Admin Dashboard
+                    </Button>
+                  </div>
+                )}
                 <p className="text-pilot-blue/60">
-                  Administrative features coming soon...
+                  School-level administrative features coming soon...
                 </p>
               </CardContent>
             </Card>
