@@ -1,0 +1,109 @@
+import { Router } from 'express';
+import { asyncHandler } from '../middleware/asyncHandler';
+import { requireAuth, requireRole } from '../middleware/auth';
+import { requireTenant } from '../middleware/tenant';
+import { db } from '../db/client';
+import { users, audits } from '../db/schema';
+import { and, count, eq } from 'drizzle-orm';
+import { createInvite } from '../services/registration';
+import bcrypt from 'bcryptjs';
+
+export const adminRouter = Router();
+adminRouter.use(requireAuth, requireRole('admin'));
+
+// 1) List users in my school
+adminRouter.get('/users', asyncHandler(async (req, res) => {
+  const { schoolId } = (req as any).user;
+  const list = await db.select({ id: users.id, email: users.email, role: users.role, active: users.active, createdAt: users.createdAt })
+    .from(users)
+    .where(eq(users.schoolId, schoolId));
+  res.json({ users: list });
+}));
+
+// 2) Invite a user (v2 registration)
+adminRouter.post('/users/invite', requireTenant, asyncHandler(async (req, res) => {
+  const { email, role, expiresInMinutes } = req.body ?? {};
+  const { schoolId, userId } = (req as any).user;
+  if (!email || !['teacher','admin'].includes(String(role))) return res.status(400).json({ error: 'email+role required' });
+
+  const { token, code } = await createInvite({
+    email: String(email),
+    role: role as 'teacher'|'admin',
+    schoolId,
+    createdByUserId: userId,
+    expiresInMinutes: expiresInMinutes ? Number(expiresInMinutes) : 1440
+  });
+
+  await db.insert(audits).values({
+    actorUserId: userId, schoolId, action: 'INVITE_CREATE',
+    targetType: 'user', targetId: token.id, data: JSON.stringify({ email, role })
+  });
+
+  res.json({ ok: true, activationUrl: `/activate?schoolId=${schoolId}&email=${encodeURIComponent(String(email).toLowerCase())}` , code, expiresAt: token.expiresAt });
+}));
+
+async function countAdmins(schoolId: number) {
+  const [row] = await db.select({ c: count() }).from(users)
+    .where(and(eq(users.schoolId, schoolId), eq(users.role, 'admin'), eq(users.active, true)));
+  return Number(row?.c ?? 0);
+}
+
+// 3) Activate/Deactivate user
+adminRouter.patch('/users/:id/active', requireTenant, asyncHandler(async (req, res) => {
+  const targetId = Number(req.params.id);
+  const { schoolId, userId: actorId } = (req as any).user;
+  const active = Boolean(req.body?.active);
+
+  const [u] = await db.select().from(users).where(and(eq(users.id, targetId), eq(users.schoolId, schoolId)));
+  if (!u) return res.status(404).json({ error: 'User not found' });
+  if (!active && u.role === 'admin') {
+    const admins = await countAdmins(schoolId);
+    if (admins <= 1) return res.status(409).json({ error: 'Cannot deactivate the last admin' });
+  }
+
+  const [upd] = await db.update(users).set({ active }).where(and(eq(users.id, targetId), eq(users.schoolId, schoolId))).returning();
+  await db.insert(audits).values({ actorUserId: actorId, schoolId, action: active ? 'USER_ACTIVATE':'USER_DEACTIVATE', targetType:'user', targetId: targetId });
+  res.json({ user: upd });
+}));
+
+// 4) Promote to admin
+adminRouter.post('/users/:id/promote', requireTenant, asyncHandler(async (req, res) => {
+  const targetId = Number(req.params.id);
+  const { schoolId, userId: actorId } = (req as any).user;
+  const [u] = await db.update(users).set({ role: 'admin' }).where(and(eq(users.id, targetId), eq(users.schoolId, schoolId))).returning();
+  if (!u) return res.status(404).json({ error: 'User not found' });
+  await db.insert(audits).values({ actorUserId: actorId, schoolId, action:'USER_PROMOTE_ADMIN', targetType:'user', targetId: targetId });
+  res.json({ user: u });
+}));
+
+// 5) Demote admin to teacher (safely)
+adminRouter.post('/users/:id/demote', requireTenant, asyncHandler(async (req, res) => {
+  const targetId = Number(req.params.id);
+  const { schoolId, userId: actorId } = (req as any).user;
+
+  const [u] = await db.select().from(users).where(and(eq(users.id, targetId), eq(users.schoolId, schoolId)));
+  if (!u) return res.status(404).json({ error: 'User not found' });
+  if (u.role !== 'admin') return res.status(400).json({ error: 'User is not an admin' });
+
+  const admins = await countAdmins(schoolId);
+  if (admins <= 1) return res.status(409).json({ error: 'Cannot demote the last admin' });
+
+  const [upd] = await db.update(users).set({ role: 'teacher' }).where(eq(users.id, targetId)).returning();
+  await db.insert(audits).values({ actorUserId: actorId, schoolId, action:'USER_DEMOTE_TEACHER', targetType:'user', targetId: targetId });
+  res.json({ user: upd });
+}));
+
+// 6) Reset password (simple immediate reset)
+adminRouter.post('/users/:id/reset-password', requireTenant, asyncHandler(async (req, res) => {
+  const targetId = Number(req.params.id);
+  const { schoolId, userId: actorId } = (req as any).user;
+  const { newPassword } = req.body ?? {};
+  if (!newPassword) return res.status(400).json({ error: 'newPassword required' });
+
+  const hash = await bcrypt.hash(String(newPassword), 10);
+  const [upd] = await db.update(users).set({ passwordHash: hash }).where(and(eq(users.id, targetId), eq(users.schoolId, schoolId))).returning();
+  if (!upd) return res.status(404).json({ error: 'User not found' });
+
+  await db.insert(audits).values({ actorUserId: actorId, schoolId, action:'USER_PASSWORD_RESET', targetType:'user', targetId: targetId });
+  res.json({ ok: true });
+}));
