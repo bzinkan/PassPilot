@@ -16,6 +16,14 @@ export async function createUser(params: { email: string; password: string; role
 }
 
 export async function findUserByEmailSchool(email: string, schoolId: number) {
-  const [row] = await db.select().from(users).where(and(eq(users.email, email.toLowerCase()), eq(users.schoolId, schoolId)));
+  const [row] = await db.select({
+    id: users.id,
+    email: users.email,
+    passwordHash: users.passwordHash,
+    role: users.role,
+    schoolId: users.schoolId,
+    active: users.active,
+    createdAt: users.createdAt
+  }).from(users).where(and(eq(users.email, email.toLowerCase()), eq(users.schoolId, schoolId)));
   return row ?? null;
 }
