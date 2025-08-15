@@ -42,3 +42,29 @@ export function safeNumber(value: unknown, defaultValue: number): number {
 export function safeString(value: unknown, defaultValue = ""): string {
   return value == null ? defaultValue : String(value);
 }
+
+/**
+ * API Response Types for consistent frontend communication
+ */
+export type ApiOk<T> = { ok: true; data: T };
+export type ApiErr = { ok: false; error: string };
+export type ApiResponse<T> = ApiOk<T> | ApiErr;
+
+/**
+ * Creates a successful API response
+ * @param data - The data to return
+ * @returns Consistent success response shape
+ */
+export function ok<T>(data: T): ApiOk<T> {
+  return { ok: true, data };
+}
+
+/**
+ * Creates an error API response
+ * @param message - Error message
+ * @param code - HTTP status code (default: 400)
+ * @returns Consistent error response shape
+ */
+export function err(message: string, code = 400): ApiErr {
+  return { ok: false, error: message };
+}
