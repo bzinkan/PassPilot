@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
-import type { User } from "@shared/schema";
+import type { users } from "@shared/schema";
+type User = typeof users.$inferSelect;
 import { Skeleton } from "@/components/ui/skeleton";
 import { ErrorView } from "@/components/ui/error-view";
 import { EmptyState } from "@/components/ui/empty-state";

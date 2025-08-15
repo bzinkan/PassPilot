@@ -152,3 +152,11 @@ export const registrationTokensRelations = relations(registrationTokens, ({ one 
   school: one(schools, { fields: [registrationTokens.schoolId], references: [schools.id] }),
   createdBy: one(users, { fields: [registrationTokens.createdByUserId], references: [users.id] })
 }));
+
+// Type exports
+export type User = typeof users.$inferSelect;
+export type InsertUser = typeof users.$inferInsert;
+export type School = typeof schools.$inferSelect;
+export type Pass = typeof passes.$inferSelect;
+export type Student = typeof students.$inferSelect;
+export type Grade = typeof grades.$inferSelect;
