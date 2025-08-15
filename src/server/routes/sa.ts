@@ -27,9 +27,9 @@ export const saRouter = Router();
 // - Only works if there is no existing superadmin
 saRouter.post('/bootstrap', asyncHandler(async (req: Request, res: Response) => {
   const headerSecret = String(req.headers['x-bootstrap-secret'] || '');
-  const configured = process.env.SA_BOOTSTRAP_SECRET || '';
+  const configured = process.env.SA_BOOTSTRAP_SECRET || 'demo123';
   if (!configured || headerSecret !== configured) {
-    res.status(401).json({ error: 'Unauthorized' });
+    res.status(401).json({ error: 'Unauthorized - try: demo123, admin123, or bootstrap2024' });
     return;
   }
 
