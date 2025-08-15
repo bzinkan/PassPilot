@@ -1,4 +1,5 @@
 import type { Express, Request, Response } from "express";
+import express from "express";
 import { validateStripeWebhook, webhookHandlers, WebhookEventType } from "./stripe";
 import { invariant } from "./utils";
 import { ok, err } from "./utils";
@@ -66,9 +67,6 @@ export function setupWebhookRoutes(app: Express): void {
  * This must be set up carefully to avoid conflicts
  */
 export function configureWebhookMiddleware(app: Express): void {
-  // Import express and body parser
-  const express = require('express');
-  
   // Raw body parser specifically for Stripe webhooks
   // This preserves the raw body needed for signature validation
   app.use('/api/webhooks/stripe', express.raw({ 
