@@ -32,7 +32,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/schools/:id', isAuthenticated, async (req: any, res) => {
+  app.get('/api/schools/:id', isAuthenticated, async (req: any, res): Promise<void> => {
     try {
       const school = await storage.getSchool(req.params.id);
       if (!school) {
@@ -68,7 +68,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Pass management
-  app.post('/api/passes', isAuthenticated, async (req: any, res) => {
+  app.post('/api/passes', isAuthenticated, async (req: any, res): Promise<void> => {
     try {
       const userId = req.user.claims.sub;
       const user = await storage.getUser(userId);
@@ -89,7 +89,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/passes/active', isAuthenticated, async (req: any, res) => {
+  app.get('/api/passes/active', isAuthenticated, async (req: any, res): Promise<void> => {
     try {
       const userId = req.user.claims.sub;
       const user = await storage.getUser(userId);
@@ -105,7 +105,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/passes', isAuthenticated, async (req: any, res) => {
+  app.get('/api/passes', isAuthenticated, async (req: any, res): Promise<void> => {
     try {
       const userId = req.user.claims.sub;
       const user = await storage.getUser(userId);
@@ -132,7 +132,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/statistics', isAuthenticated, async (req: any, res) => {
+  app.get('/api/statistics', isAuthenticated, async (req: any, res): Promise<void> => {
     try {
       const userId = req.user.claims.sub;
       const user = await storage.getUser(userId);
@@ -154,7 +154,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Kiosk endpoints
-  app.post('/api/kiosk/pass', async (req, res) => {
+  app.post('/api/kiosk/pass', async (req, res): Promise<void> => {
     try {
       const { studentName, reason, kioskToken } = req.body;
       

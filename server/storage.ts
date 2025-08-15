@@ -64,12 +64,18 @@ export class DatabaseStorage implements IStorage {
         },
       })
       .returning();
+    if (!user) {
+      throw new Error("Failed to create/update user");
+    }
     return user;
   }
 
   // School operations
   async createSchool(school: InsertSchool): Promise<School> {
     const [newSchool] = await db.insert(schools).values(school).returning();
+    if (!newSchool) {
+      throw new Error("Failed to create school");
+    }
     return newSchool;
   }
 
@@ -81,6 +87,9 @@ export class DatabaseStorage implements IStorage {
   // Kiosk device operations
   async createKioskDevice(device: InsertKioskDevice): Promise<KioskDevice> {
     const [newDevice] = await db.insert(kioskDevices).values(device).returning();
+    if (!newDevice) {
+      throw new Error("Failed to create kiosk device");
+    }
     return newDevice;
   }
 
@@ -102,6 +111,9 @@ export class DatabaseStorage implements IStorage {
   // Pass operations
   async createPass(pass: InsertPass): Promise<Pass> {
     const [newPass] = await db.insert(passes).values(pass).returning();
+    if (!newPass) {
+      throw new Error("Failed to create pass");
+    }
     return newPass;
   }
 
@@ -154,6 +166,9 @@ export class DatabaseStorage implements IStorage {
       .where(eq(passes.id, passId))
       .returning();
       
+    if (!updatedPass) {
+      throw new Error("Failed to mark pass as returned");
+    }
     return updatedPass;
   }
 

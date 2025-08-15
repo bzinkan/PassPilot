@@ -56,7 +56,7 @@ function updateUserSession(
 
 async function upsertUser(
   claims: any,
-) {
+): Promise<void> {
   await storage.upsertUser({
     id: claims["sub"],
     email: claims["email"],
