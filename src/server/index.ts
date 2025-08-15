@@ -1,0 +1,32 @@
+import 'dotenv/config';
+import express from 'express';
+import helmet from 'helmet';
+import { cookies } from './middleware/auth';
+import { notFound, errorHandler } from './middleware/error';
+import { publicRouter } from './routes/public';
+import { authRouter } from './routes/auth';
+import { adminRouter } from './routes/admin';
+import { passesRouter } from './routes/passes';
+import { kioskRouter } from './routes/kiosk';
+
+const app = express();
+app.set('trust proxy', 1);
+app.use(helmet());
+app.use(express.json({ limit: '1mb' }));
+app.use(express.urlencoded({ extended: true }));
+app.use(cookies(process.env.SESSION_SECRET!));
+
+// Core routes
+app.use('/', publicRouter);
+app.use('/', authRouter);
+app.use('/admin', adminRouter);
+app.use('/passes', passesRouter);
+app.use('/kiosk', kioskRouter);
+
+app.use(notFound);
+app.use(errorHandler);
+
+const port = Number(process.env.PORT || 5000);
+app.listen(port, () => {
+  console.log(`PassPilot (Slim) running on http://localhost:${port}`);
+});
