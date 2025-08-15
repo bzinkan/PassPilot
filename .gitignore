@@ -7,3 +7,7 @@ vite.config.ts.*
 .env
 dist
 .DS_Store
+node_modules
+.env
+dist
+.DS_Store
