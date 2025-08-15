@@ -3,7 +3,7 @@ import express from 'express';
 import helmet from 'helmet';
 import { cookies } from './middleware/auth';
 import { notFound, errorHandler } from './middleware/error';
-import { publicRouter } from './routes/public';
+// import { publicRouter } from './routes/public';
 import { authRouter } from './routes/auth';
 import { adminRouter } from './routes/admin';
 import { passesRouter } from './routes/passes';
@@ -11,6 +11,7 @@ import { gradesRouter } from './routes/grades';
 import { studentsRouter } from './routes/students';
 import { kioskRouter } from './routes/kiosk';
 import { rosterRouter, myClassRouter } from './routes/roster';
+import { pagesRouter } from './routes/pages';
 
 const app = express();
 app.set('trust proxy', 1);
@@ -20,8 +21,8 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookies(process.env.SESSION_SECRET!));
 
 // Core routes
-app.use('/', publicRouter);
 app.use('/', authRouter);
+app.use('/', pagesRouter);
 app.use('/admin', adminRouter);
 app.use('/passes', passesRouter);
 app.use('/grades', gradesRouter);

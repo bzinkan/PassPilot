@@ -15,12 +15,18 @@ authRouter.post('/login', rateLimit({ windowMs: 60_000, max: 20 }), asyncHandler
   const ok = await bcrypt.compare(String(password), user.passwordHash);
   if (!ok) return res.status(401).json({ error: 'Invalid credentials' });
   setSession(res, { userId: user.id, schoolId: user.schoolId, role: user.role as any, iat: Date.now() });
-  res.json({ ok: true });
+  res.format({
+    json: () => res.json({ ok: true }),
+    default: () => res.redirect('/dashboard')
+  });
 }));
 
 authRouter.post('/logout', asyncHandler(async (_req, res) => {
   clearSession(res);
-  res.json({ ok: true });
+  res.format({
+    json: () => res.json({ ok: true }),
+    default: () => res.redirect('/login')
+  });
 }));
 
 authRouter.get('/me', asyncHandler(async (req, res) => {
