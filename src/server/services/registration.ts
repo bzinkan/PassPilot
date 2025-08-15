@@ -40,21 +40,16 @@ export async function verifyCode(code: string, codeHash: string): Promise<boolea
   }
 }
 
-export function getInviteToken(tokenId: string): InviteToken | null {
-  const token = inviteTokens.get(tokenId);
-  if (!token || token.used || token.expiresAt < new Date()) {
-    return null;
-  }
-  return token;
+// Note: These functions appear to be incomplete - they reference non-existent
+// variables. They should be implemented based on the database schema.
+export function getInviteToken(tokenId: string): any | null {
+  // TODO: Implement proper database lookup for registration tokens
+  return null;
 }
 
 export function useInviteToken(tokenId: string): boolean {
-  const token = inviteTokens.get(tokenId);
-  if (!token || token.used || token.expiresAt < new Date()) {
-    return false;
-  }
-  token.used = true;
-  return true;
+  // TODO: Implement proper database update for token usage
+  return false;
 }
 
 export async function validateInviteEmail(email: string, schoolId: number): Promise<boolean> {

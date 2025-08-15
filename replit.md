@@ -40,7 +40,8 @@ Preferred communication style: Simple, everyday language.
 - **Provider**: Replit OIDC (OpenID Connect) integration using Passport.js.
 - **Session Storage**: PostgreSQL-backed sessions with configurable TTL.
 - **Security**: HTTP-only cookies, secure flags in production, CSRF protection, and bcrypt password hashing.
-- **Authorization**: Role-based access control (e.g., school scope restricted to admin/superadmin roles).
+- **Authorization**: Role-based access control with three roles: teacher, admin, superadmin.
+- **Super Admin System**: Cross-tenant administrative capabilities including school management, user promotion/demotion, and audit log access. Bootstrap requires SA_BOOTSTRAP_SECRET environment variable.
 
 ### File Upload & Storage
 - **Primary Storage**: Google Cloud Storage.

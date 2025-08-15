@@ -15,6 +15,7 @@ import { kioskRouter } from './routes/kiosk';
 import { kioskAuthRouter } from './routes/kiosk_auth';
 import { rosterRouter, myClassRouter } from './routes/roster';
 import { pagesRouter } from './routes/pages';
+import { saRouter } from './routes/sa';
 
 const app = express();
 app.set('trust proxy', 1);
@@ -36,6 +37,7 @@ app.use('/', kioskAuthRouter);
 app.use('/kiosk', kioskRouter);
 app.use('/', rosterRouter);
 app.use('/', myClassRouter);
+app.use('/sa', saRouter);
 
 app.use(notFound);
 app.use(errorHandler);
