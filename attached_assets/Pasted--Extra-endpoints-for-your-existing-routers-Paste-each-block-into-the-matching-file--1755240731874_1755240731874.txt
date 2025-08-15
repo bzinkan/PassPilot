@@ -1,0 +1,84 @@
+// === Extra endpoints for your existing routers ===
+// Paste each block into the matching file.
+// After saving, restart the server.
+
+/* ---------------------------------------------
+ * 1) Roster: per-grade toggle (grey ↔ green)
+ *    File: src/server/routes/roster.ts
+ * -------------------------------------------*/
+import { and, eq } from 'drizzle-orm';
+import { teacherGradeMap, students } from '../db/schema';
+import { asyncHandler } from '../middleware/asyncHandler';
+
+// POST /roster/toggle { gradeId, selected }
+rosterRouter.post('/roster/toggle', asyncHandler(async (req, res) => {
+  const { gradeId, selected } = req.body ?? {};
+  const { schoolId, userId } = (req as any).user;
+  if (!gradeId || typeof selected !== 'boolean') return res.status(400).json({ error: 'Missing gradeId/selected' });
+
+  if (selected) {
+    await db.insert(teacherGradeMap)
+      .values({ userId, schoolId, gradeId: Number(gradeId) })
+      .onConflictDoNothing(); // if already selected, no error
+  } else {
+    await db.delete(teacherGradeMap)
+      .where(and(
+        eq(teacherGradeMap.userId, userId),
+        eq(teacherGradeMap.schoolId, schoolId),
+        eq(teacherGradeMap.gradeId, Number(gradeId))
+      ));
+  }
+  res.json({ ok: true });
+}));
+
+/* ---------------------------------------------
+ * 2) Roster: bulk add students
+ *    File: src/server/routes/roster.ts
+ * -------------------------------------------*/
+// POST /students/bulk  Body: [{ name, gradeId, studentCode? }, ...]
+rosterRouter.post('/students/bulk', asyncHandler(async (req, res) => {
+  const { schoolId } = (req as any).user;
+  const items = Array.isArray(req.body) ? req.body : [];
+  if (!items.length) return res.status(400).json({ error: 'Expected an array' });
+
+  const values = items.map((it: any) => ({
+    name: String(it.name),
+    gradeId: Number(it.gradeId),
+    studentCode: it.studentCode ? String(it.studentCode) : null,
+    schoolId
+  }));
+
+  const inserted = await db.insert(students).values(values).returning();
+  res.json({ inserted: inserted.length });
+}));
+
+/* ---------------------------------------------
+ * 3) MyClass: remember last active grade (optional)
+ *    File: src/server/routes/myclass.ts
+ *    Requires userSettings table in schema
+ * -------------------------------------------*/
+import { userSettings } from '../db/schema';
+
+// POST /myclass/switch { gradeId }
+myClassRouter.post('/myclass/switch', asyncHandler(async (req, res) => {
+  const { userId } = (req as any).user;
+  const gradeId = Number(req.body?.gradeId);
+  if (!gradeId) return res.status(400).json({ error: 'gradeId required' });
+
+  await db.insert(userSettings)
+    .values({ userId, lastActiveGradeId: gradeId })
+    .onConflictDoUpdate({ target: userSettings.userId, set: { lastActiveGradeId: gradeId } });
+
+  res.json({ ok: true });
+}));
+
+/* ---------------------------------------------
+ * 4) (Optional) MyClass GET tweak
+ *    In your existing GET /myclass handler, after computing selectedIds,
+ *    fetch settings and include `currentGrade` in the response payload.
+ * -------------------------------------------*/
+// const [settings] = await db.select().from(userSettings).where(eq(userSettings.userId, userId)).limit(1);
+// const currentGrade = settings?.lastActiveGradeId && selectedIds.includes(settings.lastActiveGradeId)
+//   ? settings.lastActiveGradeId
+//   : selectedIds[0] ?? null;
+// res.json({ gradesActive: selectedIds, currentGrade, stats, students: rows });

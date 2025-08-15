@@ -3,7 +3,7 @@ import type { Request, Response } from 'express';
 import { asyncHandler } from '../middleware/asyncHandler';
 import { requireAuth } from '../middleware/auth';
 import { db } from '../db/client';
-import { grades, students, teacherGradeMap, passes } from '../../../shared/schema';
+import { grades, students, teacherGradeMap, passes, userSettings } from '../../../shared/schema';
 import { and, eq, inArray } from 'drizzle-orm';
 
 export const rosterRouter = Router();
@@ -56,6 +56,44 @@ rosterRouter.post('/roster/select', asyncHandler(async (req: Request, res: Respo
   res.json({ ok: true, selectedGradeIds: gradeIds.map(Number) });
 }));
 
+// POST /roster/toggle { gradeId, selected }
+rosterRouter.post('/roster/toggle', asyncHandler(async (req: Request, res: Response) => {
+  const { gradeId, selected } = req.body ?? {};
+  const { schoolId, userId } = (req as any).session;
+  if (!gradeId || typeof selected !== 'boolean') return res.status(400).json({ error: 'Missing gradeId/selected' });
+
+  if (selected) {
+    await db.insert(teacherGradeMap)
+      .values({ userId, schoolId, gradeId: Number(gradeId) })
+      .onConflictDoNothing(); // if already selected, no error
+  } else {
+    await db.delete(teacherGradeMap)
+      .where(and(
+        eq(teacherGradeMap.userId, userId),
+        eq(teacherGradeMap.schoolId, schoolId),
+        eq(teacherGradeMap.gradeId, Number(gradeId))
+      ));
+  }
+  res.json({ ok: true });
+}));
+
+// POST /students/bulk  Body: [{ name, gradeId, studentCode? }, ...]
+rosterRouter.post('/students/bulk', asyncHandler(async (req: Request, res: Response) => {
+  const { schoolId } = (req as any).session;
+  const items = Array.isArray(req.body) ? req.body : [];
+  if (!items.length) return res.status(400).json({ error: 'Expected an array' });
+
+  const values = items.map((it: any) => ({
+    name: String(it.name),
+    gradeId: Number(it.gradeId),
+    studentCode: it.studentCode ? String(it.studentCode) : null,
+    schoolId
+  }));
+
+  const inserted = await db.insert(students).values(values).returning();
+  res.json({ inserted: inserted.length });
+}));
+
 export const myClassRouter = Router();
 myClassRouter.use(requireAuth);
 
@@ -91,7 +129,13 @@ myClassRouter.get('/myclass', asyncHandler(async (req: Request, res: Response) =
   const stats = { total: rows.length, out: rows.filter(r => r.isOut).length, available: 0 };
   stats.available = stats.total - stats.out;
 
-  res.json({ gradesActive: selectedIds, stats, students: rows });
+  // Include current grade from user settings
+  const [settings] = await db.select().from(userSettings).where(eq(userSettings.userId, userId)).limit(1);
+  const currentGrade = settings?.lastActiveGradeId && selectedIds.includes(settings.lastActiveGradeId)
+    ? settings.lastActiveGradeId
+    : selectedIds[0] ?? null;
+
+  res.json({ gradesActive: selectedIds, currentGrade, stats, students: rows });
 }));
 
 // POST /myclass/pass
@@ -116,6 +160,19 @@ myClassRouter.post('/myclass/pass', asyncHandler(async (req: Request, res: Respo
   }).returning();
 
   res.json({ pass: p });
+}));
+
+// POST /myclass/switch { gradeId }
+myClassRouter.post('/myclass/switch', asyncHandler(async (req: Request, res: Response) => {
+  const { userId } = (req as any).session;
+  const gradeId = Number(req.body?.gradeId);
+  if (!gradeId) return res.status(400).json({ error: 'gradeId required' });
+
+  await db.insert(userSettings)
+    .values({ userId, lastActiveGradeId: gradeId })
+    .onConflictDoUpdate({ target: userSettings.userId, set: { lastActiveGradeId: gradeId } });
+
+  res.json({ ok: true });
 }));
 
 // PATCH /myclass/pass/:id/return
