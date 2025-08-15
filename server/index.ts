@@ -4,8 +4,15 @@ import "./env";
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import { configureWebhookMiddleware } from "./webhooks";
 
 const app = express();
+
+// Configure webhook middleware BEFORE general JSON parsing
+// Webhooks need raw body for signature validation
+configureWebhookMiddleware(app);
+
+// General middleware for other routes
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 

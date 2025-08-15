@@ -14,6 +14,10 @@ const EnvSchema = z.object({
   PRIVATE_OBJECT_DIR: z.string().optional(),
   PUBLIC_OBJECT_SEARCH_PATHS: z.string().optional(),
   
+  // Stripe (optional - only required if using payments)
+  STRIPE_SECRET_KEY: z.string().optional(),
+  STRIPE_WEBHOOK_SECRET: z.string().optional(),
+  
   // Database connection details (auto-provided by Replit)
   PGDATABASE: z.string().min(1, "PGDATABASE is required"),
   PGHOST: z.string().min(1, "PGHOST is required"),
