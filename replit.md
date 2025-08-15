@@ -75,6 +75,16 @@ Preferred communication style: Simple, everyday language.
 - **Response Type Guards**: Implemented isApiSuccess() and isApiError() functions for safe response handling
 - **Error Handling Helper**: Added handleApiResponse() utility for streamlined error processing in frontend code
 
+### Defensive React UI Patterns (August 15, 2025)
+- **Never Render Until Data Exists**: All components guard against undefined/null data with proper fallbacks and empty states
+- **Default Parameters Pattern**: Every component provides safe defaults for arrays, objects, and primitive props
+- **Async Query Gates**: Loading states, error handling, and null checks before rendering any data-dependent content
+- **Defensive Form Handling**: Form components with Zod validation, safe defaults, and proper submission state management
+- **Layered Data Dependencies**: Page components structured with authentication → school data → content rendering layers
+- **Comprehensive Loading States**: Skeleton components for every data type (lists, cards, stats) with consistent styling
+- **Error Boundaries**: ErrorView and EmptyState components for graceful failure and empty data scenarios
+- **Type-Safe Data Fetching**: Query client updated to handle consistent API responses with proper TypeScript integration
+
 ## System Architecture
 
 ### Frontend Architecture
